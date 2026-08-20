@@ -5,14 +5,16 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import ProjectOverview from './components/ProjectOverview';
+import Notifications from './components/Notifications'; 
+import Tasks from './components/Tasks'; 
 import './App.css';
 
 export default function App() {
-  // Controls which component view is currently active
-  const [currentView, setCurrentView] = useState('login'); // Starts at login view
+  const [currentView, setCurrentView] = useState('login');
 
   const renderCurrentView = () => {
-    switch (currentView) {
+    // Convert to lowercase to prevent capitalization mismatches causing "Page not found"
+    switch (currentView.toLowerCase()) {
       case 'login':
         return (
           <Login 
@@ -41,9 +43,23 @@ export default function App() {
             onNavigate={(view) => setCurrentView(view)}
           />
         );
-      case 'ProjectOverview': // <-- MUST MATCH 'project-overview' passed from the sidebar!
+      case 'project-overview': // <-- Fixed: lowercase with a hyphen to match currentView.toLowerCase()
         return (
           <ProjectOverview 
+            onLogout={() => setCurrentView('login')}
+            onNavigate={(view) => setCurrentView(view)}
+          />
+        );
+        case 'tasks':
+        return (
+          <Tasks 
+            onLogout={() => setCurrentView('login')} 
+            onNavigate={(view) => setCurrentView(view)}
+          />
+        );
+      case 'notifications':
+        return (
+          <Notifications 
             onLogout={() => setCurrentView('login')}
             onNavigate={(view) => setCurrentView(view)}
           />
@@ -51,7 +67,7 @@ export default function App() {
       default:
         return (
           <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
-            <h2>Page not found</h2>
+            <h2>Page not found: "{currentView}"</h2>
             <button 
               onClick={() => setCurrentView('dashboard')}
               style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '10px' }}
