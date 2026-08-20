@@ -9,12 +9,14 @@ import Notifications from './components/Notifications';
 import Tasks from './components/Tasks';
 import NewTask from './components/NewTask'; 
 import Schedule from './components/Schedule';
-import CalendarPage from './components/CalendarPage'; 
+import CalendarPage from './components/CalendarPage';
+import Setting from './components/Setting'; 
 import './App.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('login');
-  const [selectedDate, setSelectedDate] = useState('18 May 2025'); // <-- New feature: state for the selected date
+  const [selectedDate, setSelectedDate] = useState('20 August 2026');
+  const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
 
   // Updated navigation handler to accept an optional second argument for the date payload
   const handleNavigate = (view, date = null) => {
@@ -51,6 +53,7 @@ export default function App() {
       case 'dashboard':
         return (
           <Dashboard 
+            theme={theme} // <-- Passes theme down to Dashboard
             onLogout={() => setCurrentView('login')} 
             onNavigate={handleNavigate}
           />
@@ -58,6 +61,7 @@ export default function App() {
       case 'project-overview':
         return (
           <ProjectOverview 
+            theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
@@ -65,6 +69,7 @@ export default function App() {
       case 'tasks':
         return (
           <Tasks 
+            theme={theme}
             onLogout={() => setCurrentView('login')} 
             onNavigate={handleNavigate}
           />
@@ -72,6 +77,7 @@ export default function App() {
       case 'notifications':
         return (
           <Notifications 
+            theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
@@ -79,6 +85,7 @@ export default function App() {
       case 'newtask':
         return (
           <NewTask 
+            theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
@@ -86,14 +93,25 @@ export default function App() {
       case 'schedule':
         return (
           <Schedule 
+            theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
-            selectedDate={selectedDate} // <-- New feature: passes date down to Schedule
+            selectedDate={selectedDate}
           />
         );
       case 'calendarpage':
         return (
           <CalendarPage
+            theme={theme}
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+        );
+      case 'setting':
+        return (
+          <Setting
+            theme={theme}       // <-- Passes theme down to Setting
+            setTheme={setTheme} // <-- Passes setTheme down to Setting
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
