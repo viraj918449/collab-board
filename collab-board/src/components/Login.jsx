@@ -1,9 +1,10 @@
 // src/components/Login.jsx
 import React, { useState } from 'react';
 
-export default function Login({ onSwitchToRegister, onLoginSuccess }) {
+export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,7 +46,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
                 placeholder="Enter your username" 
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                 required
               />
             </div>
@@ -57,14 +58,34 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
                 placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                 required
               />
             </div>
 
+            {/* Remember me & Forgot password row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '13px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#334155' }}>
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe} 
+                  onChange={(e) => setRememberMe(e.target.checked)} 
+                  style={{ cursor: 'pointer' }}
+                />
+                Remember me
+              </label>
+              
+              <span 
+                onClick={onSwitchToForgot} 
+                style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
+              >
+                Forgot password?
+              </span>
+            </div>
+
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '12px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}
+              style={{ width: '100%', padding: '12px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
             >
               Log in →
             </button>
