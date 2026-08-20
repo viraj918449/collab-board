@@ -6,11 +6,23 @@ import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
 import ProjectOverview from './components/ProjectOverview';
 import Notifications from './components/Notifications'; 
-import Tasks from './components/Tasks'; 
+import Tasks from './components/Tasks';
+import NewTask from './components/NewTask'; 
+import Schedule from './components/Schedule';
+import CalendarPage from './components/CalendarPage'; 
 import './App.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('login');
+  const [selectedDate, setSelectedDate] = useState('18 May 2025'); // <-- New feature: state for the selected date
+
+  // Updated navigation handler to accept an optional second argument for the date payload
+  const handleNavigate = (view, date = null) => {
+    if (date) {
+      setSelectedDate(date);
+    }
+    setCurrentView(view);
+  };
 
   const renderCurrentView = () => {
     // Convert to lowercase to prevent capitalization mismatches causing "Page not found"
@@ -40,28 +52,50 @@ export default function App() {
         return (
           <Dashboard 
             onLogout={() => setCurrentView('login')} 
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={handleNavigate}
           />
         );
-      case 'project-overview': // <-- Fixed: lowercase with a hyphen to match currentView.toLowerCase()
+      case 'project-overview':
         return (
           <ProjectOverview 
             onLogout={() => setCurrentView('login')}
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={handleNavigate}
           />
         );
-        case 'tasks':
+      case 'tasks':
         return (
           <Tasks 
             onLogout={() => setCurrentView('login')} 
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={handleNavigate}
           />
         );
       case 'notifications':
         return (
           <Notifications 
             onLogout={() => setCurrentView('login')}
-            onNavigate={(view) => setCurrentView(view)}
+            onNavigate={handleNavigate}
+          />
+        );
+      case 'newtask':
+        return (
+          <NewTask 
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+        );
+      case 'schedule':
+        return (
+          <Schedule 
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+            selectedDate={selectedDate} // <-- New feature: passes date down to Schedule
+          />
+        );
+      case 'calendarpage':
+        return (
+          <CalendarPage
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
           />
         );
       default:

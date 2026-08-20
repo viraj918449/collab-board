@@ -75,7 +75,7 @@ export default function Dashboard({ onLogout, onNavigate }) {
             👤 Profile
           </div>
           
-          <div onClick={() => onNavigate('Tasks')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: '#64748b', borderRadius: '8px', cursor: 'pointer' }}>
+          <div onClick={() => onNavigate('tasks')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: '#64748b', borderRadius: '8px', cursor: 'pointer' }}>
             📋 Tasks
           </div>
           
@@ -117,21 +117,21 @@ export default function Dashboard({ onLogout, onNavigate }) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => onNavigate('newtask')}
               style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', fontSize: '13px' }}
             >
               + New Task
             </button>
 
             <div 
-              onClick={() => onNavigate('Notifications')}
+              onClick={() => onNavigate('notifications')}
               style={{ fontSize: '18px', cursor: 'pointer', padding: '6px', borderRadius: '50%', background: '#fff', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               title="View Notifications"
             >
               🔔
             </div>
 
-            <div onClick={() => onNavigate('profile')}style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', background: '#cbd5e1' }}>
+            <div onClick={() => onNavigate('profile')} style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', background: '#cbd5e1', cursor: 'pointer' }}>
               <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function Dashboard({ onLogout, onNavigate }) {
               <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>Upcoming Tasks</h3>
-                  <button onClick={() => onNavigate('tasks')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none' }}>View all</button>
+                  <button onClick={() => onNavigate('tasks')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View all</button>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
                   {filteredTasks.length === 0 ? (
@@ -237,7 +237,7 @@ export default function Dashboard({ onLogout, onNavigate }) {
             <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>Recent Activity</h3>
-                <button style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none' }}>View all</button>
+                <button onClick={() => onNavigate('team')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View all</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: '#475569' }}>
                 {activities.map(act => (
@@ -257,7 +257,7 @@ export default function Dashboard({ onLogout, onNavigate }) {
             <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>Calendar</h3>
-                <span style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer' }}>View All</span>
+                <button onClick={() => onNavigate('calendarpage')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
               </div>
               <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold', color: '#1e293b', marginBottom: '10px' }}>August 2026</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '12px', color: '#64748b' }}>
@@ -273,7 +273,7 @@ export default function Dashboard({ onLogout, onNavigate }) {
             <div style={{ background: 'white', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b' }}>Today's Schedule</h3>
-                <span style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer' }}>View All</span>
+                <button onClick={() => onNavigate('schedule')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: '#334155' }}>
                 <div><strong>10:00 AM</strong> - Sprint Planning</div>
