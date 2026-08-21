@@ -236,7 +236,7 @@ export default function Tasks({ onLogout, onNavigate }) {
                 type="text" 
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Add a comment..." 
+               
                 style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '13px', boxSizing: 'border-box', background: '#f8fafc' }}
               />
             </form>
