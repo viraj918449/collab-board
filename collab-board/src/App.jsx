@@ -69,9 +69,17 @@ export default function App() {
           />
         );
       case 'profile':
-        return renderPlaceholderView('Profile', 'Your profile page is ready to be connected to profile data.');
+        return (
+          <Profile 
+            theme={theme} // <-- Passes theme down to Profile
+          />
+        );  
       case 'team':
-        return renderPlaceholderView('Team', 'Your team page is ready to be connected to team data.');
+        return (                      
+          <Team
+            theme={theme} // <-- Passes theme down to Team
+          />
+        );
       case 'dashboard':
         return (
           <Dashboard 
