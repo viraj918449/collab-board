@@ -26,7 +26,7 @@ export default function Tasks({ onLogout, onNavigate, theme = 'light' }) {
   const [comments, setComments] = useState([
     { id: 1, author: 'Nadishan Vithanarachchi', time: 'May 20, 3:00 PM', text: 'Please check the updated hero section.', avatarBg: '#ef4444' },
     { id: 2, author: 'Imanya Lamahewa', time: 'May 20, 3:00 PM', text: 'I have reviewed it.', avatarBg: '#3b82f6' },
-    { id: 3, author: 'Harini Hansara', time: 'May 21, 7:46 PM', text: "Looks good! I'll move to the next section.", avatarBg: '#3b82f6' }
+    { id: 3, author: 'Harini Hasara', time: 'May 21, 7:46 PM', text: "Looks good! I'll move to the next section.", avatarBg: '#3b82f6' }
   ]);
   const [newComment, setNewComment] = useState('');
 
