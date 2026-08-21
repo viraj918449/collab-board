@@ -71,13 +71,17 @@ export default function App() {
       case 'profile':
         return (
           <Profile 
-            theme={theme} // <-- Passes theme down to Profile
+            theme={theme} 
+            onLogout={() => setCurrentView('login')} 
+            onNavigate={handleNavigate}
           />
         );  
       case 'team':
         return (                      
           <Team
-            theme={theme} // <-- Passes theme down to Team
+            theme={theme}
+            onLogout={() => setCurrentView('login')} 
+            onNavigate={handleNavigate} // <-- Passes theme down to Team
           />
         );
       case 'dashboard':
