@@ -142,7 +142,7 @@ export default function App() {
         case 'upcomingtask':
         return (
           <Upcomingtask
-            theme={theme}       // <-- Passes theme down to Setting
+            theme={theme}       
             setTheme={setTheme} // <-- Passes setTheme down to Setting
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}

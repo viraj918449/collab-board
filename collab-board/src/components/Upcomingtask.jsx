@@ -51,6 +51,11 @@ export default function UpcomingTask({ onNavigate, onLogout, theme = 'light' }) 
             📊 Dashboard
           </div>
 
+          {/* FIX: Added the missing '<' on the div below */}
+          <div onClick={() => onNavigate && onNavigate('profile')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
+            👤 Profile
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#2563eb', color: 'white', borderRadius: '8px', fontWeight: '500', cursor: 'pointer' }}>
             📋 Tasks
           </div>
@@ -65,10 +70,6 @@ export default function UpcomingTask({ onNavigate, onLogout, theme = 'light' }) 
           
           <div onClick={() => onNavigate && onNavigate('setting')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
             ⚙️ Setting
-          </div>
-
-          <div onClick={() => onNavigate && onNavigate('profile')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
-            👤 Profile
           </div>
 
           <button 
