@@ -40,7 +40,7 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
       {/* Sidebar */}
       <div style={{ width: '240px', background: cardBg, borderRight: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', padding: '20px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginBottom: '30px', color: textColor }}>
-          <span style={{ background: '#2563eb', color: 'white', padding: '6px', borderRadius: '8px' }}>📋</span> CollabBoard
+          <span style={{ background: '#2563eb', color: 'white', padding: '6px', borderRadius: '8px' }}>📅</span> CollabBoard
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>

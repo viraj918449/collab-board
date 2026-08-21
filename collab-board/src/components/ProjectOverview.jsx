@@ -1,5 +1,5 @@
 // src/components/ProjectOverview.jsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' }) {
   // Theme styling variables
@@ -36,6 +36,27 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
 
   // New Invite form state
   const [inviteEmail, setInviteEmail] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+
+  const filteredTodoTasks = useMemo(() => {
+  return todoTasks.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+}, [todoTasks, searchQuery]);
+
+const filteredInProgressTasks = useMemo(() => {
+  return inProgressTasks.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+}, [inProgressTasks, searchQuery]);
+
+const filteredDoneTasks = useMemo(() => {
+  return doneTasks.filter((task) =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+}, [doneTasks, searchQuery]);
+
 
   const handleAddTaskSubmit = (e) => {
     e.preventDefault();
@@ -129,6 +150,8 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
             <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: subTextColor }}>🔍</span>
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search tasks....." 
               style={{ padding: '8px 12px 8px 32px', borderRadius: '8px', border: `1px solid ${borderColor}`, outline: 'none', width: '180px', fontSize: '13px', background: inputBg, color: textColor }}
             />
@@ -148,7 +171,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
           <div style={{ background: isDark ? '#1e1b4b' : '#f4f3ff', padding: '16px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>To Do</h3>
             
-            {todoTasks.map(task => (
+            {filteredTodoTasks.map(task => (
               <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
                 <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
                 <span style={{ background: isDark ? '#312e81' : '#ede9fe', color: isDark ? '#c4b5fd' : '#7c3aed', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
@@ -173,7 +196,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
           <div style={{ background: isDark ? '#292524' : '#fcfaf6', padding: '16px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>In progress</h3>
             
-            {inProgressTasks.map(task => (
+            {filteredInProgressTasks.map(task => (
               <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
                 <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
                 <span style={{ background: isDark ? '#312e81' : '#ede9fe', color: isDark ? '#c4b5fd' : '#7c3aed', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
@@ -198,7 +221,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
           <div style={{ background: isDark ? '#064e3b' : '#f0fdf4', padding: '16px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>Done</h3>
             
-            {doneTasks.map(task => (
+            {filteredDoneTasks.map(task => (
               <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
                 <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
                 <span style={{ background: isDark ? '#14532d' : '#dcfce7', color: isDark ? '#86efac' : '#16a34a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
