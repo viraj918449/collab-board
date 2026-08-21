@@ -10,7 +10,8 @@ import Tasks from './components/Tasks';
 import NewTask from './components/NewTask'; 
 import Schedule from './components/Schedule';
 import CalendarPage from './components/CalendarPage';
-import Setting from './components/Setting'; 
+import Setting from './components/Setting';
+import Profile from './components/Profile'; 
 import './App.css';
 
 export default function App() {
@@ -116,6 +117,14 @@ export default function App() {
             onNavigate={handleNavigate}
           />
         );
+      case 'profile':
+        return (
+          <Profile
+            theme={theme}
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+      );
       default:
         return (
           <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
