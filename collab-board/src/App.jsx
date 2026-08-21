@@ -13,6 +13,7 @@ import CalendarPage from './components/CalendarPage';
 import Setting from './components/Setting';
 import Profile from './components/Profile'; 
 import ActivityHistory from './components/ActivityHistory';
+import Team from './components/Team';
 import './App.css';
 
 export default function App() {
@@ -129,6 +130,14 @@ export default function App() {
       case 'activity-history':
         return (
           <ActivityHistory
+            theme={theme}
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+      );
+      case 'team':
+        return (
+          <Team
             theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
