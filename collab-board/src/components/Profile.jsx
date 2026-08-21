@@ -54,8 +54,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
     <div style={{ display: 'flex', minHeight: '100vh', background: mainBg, fontFamily: 'sans-serif', boxSizing: 'border-box', color: textColor }}>
       
       {/* Sidebar - Matching specific UI styling from the image */}
-    
-        <div style={{ width: '240px', background: cardBg, borderRight: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', padding: '20px', boxSizing: 'border-box' }}>
+      <div style={{ width: '240px', background: cardBg, borderRight: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', padding: '20px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginBottom: '30px', color: textColor }}>
           <span style={{ background: '#2563eb', color: 'white', padding: '6px', borderRadius: '8px' }}>📅</span> CollabBoard
         </div>
@@ -84,9 +83,18 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
           <div onClick={() => onNavigate('setting')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
             ⚙️ Setting
           </div>
+
+
+          <button 
+            onClick={onLogout}
+            style={{ padding: '10px', background: isDark ? '#7f1d1d' : '#fee2e2', color: isDark ? '#fca5a5' : '#dc2626', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            Logout
+          </button>
+          
         </div>
 
-      </div>
+      </div> 
 
       {/* Main Content Area */}
       <div style={{ flex: 1, padding: '40px 60px', boxSizing: 'border-box', overflowY: 'auto' }}>
@@ -179,7 +187,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
                   type="submit" 
                   style={{ padding: '12px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', fontSize: '14px', cursor: 'pointer' }}
                 >
-                  save changes
+                  Save Changes
                 </button>
               </div>
 

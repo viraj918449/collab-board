@@ -239,7 +239,6 @@ export default function Tasks({ onLogout, onNavigate, theme = 'light' }) {
               ))}
             </div>
 
-            {/* Add Comment Input */}
             <form onSubmit={handleAddComment}>
               <input 
                 type="text" 
