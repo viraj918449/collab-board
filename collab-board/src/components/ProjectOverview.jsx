@@ -38,6 +38,26 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
   const [inviteEmail, setInviteEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Edit Task modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskColumn, setEditingTaskColumn] = useState(null);
+  const [editTaskTitle, setEditTaskTitle] = useState('');
+  const [editTaskTag, setEditTaskTag] = useState('Design');
+
+  // Assign Team Member modal state
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assigningTaskId, setAssigningTaskId] = useState(null);
+  const [assigningTaskColumn, setAssigningTaskColumn] = useState(null);
+  const [assignMemberEmail, setAssignMemberEmail] = useState('');
+
+  // Available team members for assignment
+  const [teamMembers] = useState([
+    { id: 1, name: 'John Doe', email: 'john@example.com', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
+    { id: 3, name: 'Alex Johnson', email: 'alex@example.com', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
+    { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100' }
+  ]);
 
   const filteredTodoTasks = useMemo(() => {
   return todoTasks.filter((task) =>
@@ -84,6 +104,89 @@ const filteredDoneTasks = useMemo(() => {
     alert(`Invitation sent successfully to ${inviteEmail}!`);
     setInviteEmail('');
     setIsInviteModalOpen(false);
+  };
+
+  // Delete Task Handler
+  const handleDeleteTask = (taskId, column) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      if (column === 'todo') {
+        setTodoTasks(todoTasks.filter(task => task.id !== taskId));
+      } else if (column === 'inprogress') {
+        setInProgressTasks(inProgressTasks.filter(task => task.id !== taskId));
+      } else if (column === 'done') {
+        setDoneTasks(doneTasks.filter(task => task.id !== taskId));
+      }
+    }
+  };
+
+  // Edit Task Handler - Open Modal
+  const handleEditTask = (task, column) => {
+    setEditingTaskId(task.id);
+    setEditingTaskColumn(column);
+    setEditTaskTitle(task.title);
+    setEditTaskTag(task.tag);
+    setIsEditModalOpen(true);
+  };
+
+  // Edit Task Submit Handler
+  const handleEditTaskSubmit = (e) => {
+    e.preventDefault();
+    if (!editTaskTitle.trim()) return;
+
+    if (editingTaskColumn === 'todo') {
+      setTodoTasks(todoTasks.map(task => 
+        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
+      ));
+    } else if (editingTaskColumn === 'inprogress') {
+      setInProgressTasks(inProgressTasks.map(task => 
+        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
+      ));
+    } else if (editingTaskColumn === 'done') {
+      setDoneTasks(doneTasks.map(task => 
+        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
+      ));
+    }
+
+    setIsEditModalOpen(false);
+    setEditingTaskId(null);
+  };
+
+  // Assign Team Member Handler - Open Modal
+  const handleAssignTask = (taskId, column) => {
+    setAssigningTaskId(taskId);
+    setAssigningTaskColumn(column);
+    setAssignMemberEmail('');
+    setIsAssignModalOpen(true);
+  };
+
+  // Assign Team Member Submit Handler
+  const handleAssignMemberSubmit = (e) => {
+    e.preventDefault();
+    if (!assignMemberEmail.trim()) return;
+
+    const member = teamMembers.find(m => m.email === assignMemberEmail);
+    if (!member) {
+      alert('Team member not found!');
+      return;
+    }
+
+    if (assigningTaskColumn === 'todo') {
+      setTodoTasks(todoTasks.map(task => 
+        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
+      ));
+    } else if (assigningTaskColumn === 'inprogress') {
+      setInProgressTasks(inProgressTasks.map(task => 
+        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
+      ));
+    } else if (assigningTaskColumn === 'done') {
+      setDoneTasks(doneTasks.map(task => 
+        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
+      ));
+    }
+
+    alert(`Task assigned to ${member.name}!`);
+    setIsAssignModalOpen(false);
+    setAssigningTaskId(null);
   };
 
   return (
@@ -172,8 +275,33 @@ const filteredDoneTasks = useMemo(() => {
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>To Do</h3>
             
             {filteredTodoTasks.map(task => (
-              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
-                <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
+              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px', position: 'relative', group: 'hover' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, flex: 1 }}>{task.title}</div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => handleEditTask(task, 'todo')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Edit Task"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => handleAssignTask(task.id, 'todo')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#10b981', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Assign Member"
+                    >
+                      👤
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id, 'todo')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Delete Task"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
                 <span style={{ background: isDark ? '#312e81' : '#ede9fe', color: isDark ? '#c4b5fd' : '#7c3aed', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: subTextColor }}>
                   <span>{task.date}</span>
@@ -197,8 +325,33 @@ const filteredDoneTasks = useMemo(() => {
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>In progress</h3>
             
             {filteredInProgressTasks.map(task => (
-              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
-                <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
+              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px', position: 'relative', group: 'hover' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, flex: 1 }}>{task.title}</div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => handleEditTask(task, 'inprogress')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Edit Task"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => handleAssignTask(task.id, 'inprogress')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#10b981', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Assign Member"
+                    >
+                      👤
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id, 'inprogress')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Delete Task"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
                 <span style={{ background: isDark ? '#312e81' : '#ede9fe', color: isDark ? '#c4b5fd' : '#7c3aed', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: subTextColor }}>
                   <span>{task.date}</span>
@@ -222,8 +375,33 @@ const filteredDoneTasks = useMemo(() => {
             <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor, fontWeight: 'bold' }}>Done</h3>
             
             {filteredDoneTasks.map(task => (
-              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px' }}>
-                <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, marginBottom: '8px' }}>{task.title}</div>
+              <div key={task.id} style={{ background: cardBg, padding: '14px', borderRadius: '10px', border: `1px solid ${borderColor}`, marginBottom: '12px', position: 'relative', group: 'hover' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ fontWeight: '600', fontSize: '14px', color: textColor, flex: 1 }}>{task.title}</div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => handleEditTask(task, 'done')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#3b82f6', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Edit Task"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => handleAssignTask(task.id, 'done')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#10b981', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Assign Member"
+                    >
+                      👤
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTask(task.id, 'done')}
+                      style={{ padding: '4px 6px', background: 'transparent', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+                      title="Delete Task"
+                    >
+                      🗑
+                    </button>
+                  </div>
+                </div>
                 <span style={{ background: isDark ? '#14532d' : '#dcfce7', color: isDark ? '#86efac' : '#16a34a', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: '500', display: 'inline-block', marginBottom: '12px' }}>{task.tag}</span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: subTextColor }}>
                   <span>{task.date}</span>
@@ -337,6 +515,127 @@ const filteredDoneTasks = useMemo(() => {
                   style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
                 >
                   Send Invite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {isEditModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ background: cardBg, padding: '28px', borderRadius: '14px', width: '420px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', color: textColor, animation: 'slideUp 0.3s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: textColor, fontSize: '18px', fontWeight: '600' }}>✎ Edit Task</h3>
+              <button 
+                onClick={() => setIsEditModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: subTextColor }}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleEditTaskSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: subTextColor, marginBottom: '8px' }}>Task Title</label>
+                <input 
+                  type="text" 
+                  value={editTaskTitle}
+                  onChange={(e) => setEditTaskTitle(e.target.value)}
+                  placeholder="Enter task title..." 
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${borderColor}`, outline: 'none', boxSizing: 'border-box', background: inputBg, color: textColor, fontSize: '14px', transition: 'border-color 0.2s' }}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: subTextColor, marginBottom: '8px' }}>Tag Category</label>
+                <select 
+                  value={editTaskTag}
+                  onChange={(e) => setEditTaskTag(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${borderColor}`, outline: 'none', background: inputBg, color: textColor, fontSize: '14px', cursor: 'pointer' }}
+                >
+                  <option value="Design">Design</option>
+                  <option value="Research">Research</option>
+                  <option value="Planning">Planning</option>
+                  <option value="Development">Development</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditModalOpen(false)}
+                  style={{ padding: '10px 20px', background: isDark ? '#334155' : '#e2e8f0', color: textColor, border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' }}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Team Member Modal */}
+      {isAssignModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
+          <div style={{ background: cardBg, padding: '28px', borderRadius: '14px', width: '420px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 10px 25px rgba(0,0,0,0.2)', color: textColor }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h3 style={{ margin: 0, color: textColor, fontSize: '18px', fontWeight: '600' }}>👤 Assign Team Member</h3>
+              <button 
+                onClick={() => setIsAssignModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: subTextColor }}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleAssignMemberSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: subTextColor, marginBottom: '8px' }}>Select Member</label>
+                <select 
+                  value={assignMemberEmail}
+                  onChange={(e) => setAssignMemberEmail(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: `1px solid ${borderColor}`, outline: 'none', background: inputBg, color: textColor, fontSize: '14px', cursor: 'pointer' }}
+                >
+                  <option value="">-- Choose a team member --</option>
+                  {teamMembers.map(member => (
+                    <option key={member.id} value={member.email}>{member.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: subTextColor, marginBottom: '12px' }}>Team Members</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {teamMembers.map(member => (
+                    <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: isDark ? '#334155' : '#f1f5f9', borderRadius: '10px', border: assignMemberEmail === member.email ? `2px solid #10b981` : `1px solid ${borderColor}`, cursor: 'pointer', transition: 'all 0.2s' }} onClick={() => setAssignMemberEmail(member.email)}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#cbd5e1', overflow: 'hidden', border: '2px solid #cbd5e1' }}>
+                        <img src={member.avatar} alt={member.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: textColor }}>{member.name}</div>
+                        <div style={{ fontSize: '12px', color: subTextColor }}>{member.email}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsAssignModalOpen(false)}
+                  style={{ padding: '10px 20px', background: isDark ? '#334155' : '#e2e8f0', color: textColor, border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ padding: '10px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px', transition: 'all 0.2s' }}
+                >
+                  Assign
                 </button>
               </div>
             </form>
