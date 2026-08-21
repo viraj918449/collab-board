@@ -18,10 +18,22 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const [bio, setBio] = useState('Product designer passionate about creating beautiful and functional user experiences.');
   const [location, setLocation] = useState('New York, USA');
   const [website, setWebsite] = useState('https://janedoe.design');
+  const [profileImage, setProfileImage] = useState(
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
+   );
 
   const handleSave = (e) => {
     e.preventDefault();
     alert('Profile updated successfully!');
+  };
+
+
+  const handlePhotoChange = (e) => {
+  const file = e.target.files[0];
+
+  if (file) {
+    setProfileImage(URL.createObjectURL(file));
+  }
   };
 
   // Helper for Sidebar Nav Buttons
@@ -108,18 +120,70 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
         <div style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: '12px', display: 'flex', padding: '40px', minHeight: '500px' }}>
           
           {/* Left Column: Avatar & Basic Info */}
-          <div style={{ width: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', borderRight: `1px solid ${borderColor}`, paddingRight: '40px' }}>
-            <img 
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200" 
-              alt="Profile Avatar" 
-              style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', marginBottom: '20px' }} 
-            />
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', color: textColor, fontWeight: 'bold' }}>{fullName}</h2>
-            <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: subTextColor }}>{email.toLowerCase()}</p>
+          <div style={{
+            width: '220px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderRight: `1px solid ${borderColor}`,
+            paddingRight: '40px'
+          }}>
             
-            <button style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #3b82f6', color: '#3b82f6', borderRadius: '6px', fontSize: '13px', fontWeight: '500', cursor: 'pointer', width: '100%' }}>
+            <img 
+              src={profileImage}
+              alt="Profile Avatar"
+              style={{
+                width: '120px',
+                height: '120px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                marginBottom: '20px'
+              }}
+            />
+
+            <h2 style={{
+              margin: '0 0 4px 0',
+              fontSize: '20px',
+              color: textColor,
+              fontWeight: 'bold'
+            }}>
+              {fullName}
+            </h2>
+
+            <p style={{
+              margin: '0 0 20px 0',
+              fontSize: '12px',
+              color: subTextColor
+            }}>
+              {email.toLowerCase()}
+            </p>
+
+            {/* Instagram-style Change Photo */}
+            <label
+              htmlFor="profile-photo"
+              style={{
+                padding: '8px 20px',
+                background: '#2563eb',
+                color: '#ffffff',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                textAlign: 'center',
+                width: '100%',
+                boxSizing: 'border-box'
+              }}
+            >
               Change Photo
-            </button>
+            </label>
+
+            <input
+              id="profile-photo"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              style={{ display: 'none' }}
+            />
           </div>
 
           {/* Right Column: Form Fields */}
