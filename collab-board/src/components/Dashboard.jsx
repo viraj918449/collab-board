@@ -246,7 +246,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
             <div style={{ background: cardBg, padding: '20px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', color: textColor }}>Recent Activity</h3>
-                <button onClick={() => onNavigate('team')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View all</button>
+                <button onClick={() => onNavigate('activity-history')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View all</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: subTextColor }}>
                 {activities.map(act => (

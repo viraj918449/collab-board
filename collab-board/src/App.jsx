@@ -12,6 +12,7 @@ import Schedule from './components/Schedule';
 import CalendarPage from './components/CalendarPage';
 import Setting from './components/Setting';
 import Profile from './components/Profile'; 
+import ActivityHistory from './components/ActivityHistory';
 import './App.css';
 
 export default function App() {
@@ -120,6 +121,14 @@ export default function App() {
       case 'profile':
         return (
           <Profile
+            theme={theme}
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+      );
+      case 'activity-history':
+        return (
+          <ActivityHistory
             theme={theme}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
