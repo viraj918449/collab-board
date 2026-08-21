@@ -10,15 +10,11 @@ import Tasks from './components/Tasks';
 import NewTask from './components/NewTask'; 
 import Schedule from './components/Schedule';
 import CalendarPage from './components/CalendarPage';
-<<<<<<< HEAD
 import Setting from './components/Setting'; 
 import Upcomingtask from './components/Upcomingtask'; 
-=======
-import Setting from './components/Setting';
 import Profile from './components/Profile'; 
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
->>>>>>> b573cd1b0205ec274989f0968bfd8a3ccf3f1a3d
 import './App.css';
 
 export default function App() {
@@ -142,7 +138,7 @@ export default function App() {
             onNavigate={handleNavigate}
           />
         );
-<<<<<<< HEAD
+
         case 'upcomingtask':
         return (
           <Upcomingtask
@@ -152,7 +148,6 @@ export default function App() {
             onNavigate={handleNavigate}
           />
         );
-=======
       case 'profile':
         return (
           <Profile
@@ -177,7 +172,6 @@ export default function App() {
             onNavigate={handleNavigate}
           />
       );
->>>>>>> b573cd1b0205ec274989f0968bfd8a3ccf3f1a3d
       default:
         return (
           <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
