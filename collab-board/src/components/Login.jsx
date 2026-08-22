@@ -24,12 +24,11 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               CollabBoard helps your team stay organized, focused, and in sync - anytime, anywhere.
             </p>
           </div>
-        </div>
-
-        <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div>👥 <strong>Team Collaboration:</strong> Work together in real-time</div>
             <div>🛡️ <strong>Secure & Reliable:</strong> Your data is safe always</div>
             <div>☁️ <strong>Access Anywhere:</strong> Use from any device</div>
+          </div>
         </div>
 
         {/* Right Side Form */}
