@@ -245,7 +245,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
                 />
               </div>
 
-              {/* Save Button */}
+              {/* Save submit Button */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '20px' }}>
                 <button 
                   type="submit" 
