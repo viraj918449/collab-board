@@ -241,9 +241,6 @@ const filteredDoneTasks = useMemo(() => {
             >
               + Invite
             </button>
-            <button style={{ padding: '8px 12px', background: cardBg, border: `1px solid ${borderColor}`, borderRadius: '8px', cursor: 'pointer', color: textColor }}>
-              ···
-            </button>
           </div>
         </div>
 
@@ -497,7 +494,7 @@ const filteredDoneTasks = useMemo(() => {
                   type="email" 
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="colleague@example.com" 
+                  placeholder="Kaveesha@gmail.com" 
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: `1px solid ${borderColor}`, outline: 'none', boxSizing: 'border-box', background: inputBg, color: textColor }}
                   autoFocus
                 />
