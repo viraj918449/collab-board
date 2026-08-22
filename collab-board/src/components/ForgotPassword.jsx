@@ -1,6 +1,5 @@
 // src/components/ForgotPassword.jsx
 import React, { useState } from 'react';
-
 export default function ForgotPassword({ onSwitchToLogin }) {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -37,7 +36,8 @@ export default function ForgotPassword({ onSwitchToLogin }) {
               Secure login and protected routes for your data.
             </div>
             <div>
-              <strong>Real-time Updates</strong><br />
+              
+              <strong>Real-time update</strong><br />
               See changes instantly with WebSocket real-time sync.
             </div>
           </div>
