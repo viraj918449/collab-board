@@ -29,18 +29,7 @@ export default function ForgotPassword({ onSwitchToLogin }) {
               CollabBoard helps your team stay organized, focused and in sync - anytime, anywhere.
             </p>
           </div>
-
-          <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between', marginTop: '40px', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
-            <div>
-              <strong>JWT Authentication</strong><br />
-              Secure login and protected  routes for your data.
-            </div>
-            <div>
-              
-              <strong>Real-time update</strong><br />
-              See changes instantly with WebSocket real-time sync.
-            </div>
-          </div>
+          
         </div>
 
         {/* Right Side Form */}

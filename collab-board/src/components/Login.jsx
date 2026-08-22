@@ -24,11 +24,6 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               CollabBoard helps your team stay organized, focused, and in sync - anytime, anywhere.
             </p>
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '15px' }}>
-            <span>🔒 JWT Authentication</span>
-            <span>⚡ Real-time Updates</span>
-            <span>☁️ Offline Support</span>
-          </div>
         </div>
 
         {/* Right Side Form */}
