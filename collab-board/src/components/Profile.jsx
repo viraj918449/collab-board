@@ -24,7 +24,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
 
   const handleSave = (e) => {
     e.preventDefault();
-    alert('Profile updated successfully!');
+    alert('Profile update successfully!');
   };
 
 
