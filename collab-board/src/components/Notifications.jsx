@@ -8,7 +8,7 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
   const cardBg = isDark ? '#1e293b' : 'white';
   const textColor = isDark ? '#f8fafc' : '#1e293b';
   const subTextColor = isDark ? '#94a3b8' : '#64748b';
-  const borderColor = isDark ? '#334155' : '#e2e8f0';
+  const borderColor = isDark ? '#334155' : '#ffffff';
 
   const [activeTab, setActiveTab] = useState('All');
 
@@ -83,7 +83,7 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
             ))}
           </div>
           <span style={{ fontSize: '13px', color: '#2563eb', cursor: 'pointer', fontWeight: '500', paddingBottom: '12px' }}>
-            Mark all as read
+            Mark all as read this 
           </span>
         </div>
 
@@ -173,7 +173,6 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
             </div>
             <div style={{ fontSize: '12px', color: subTextColor, whiteSpace: 'nowrap' }}>yesterday</div>
           </div>
-
         </div>
 
       </div>

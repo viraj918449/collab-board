@@ -1,4 +1,5 @@
 // src/App.jsx
+
 import React, { useState } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -10,7 +11,8 @@ import Tasks from './components/Tasks';
 import NewTask from './components/NewTask'; 
 import Schedule from './components/Schedule';
 import CalendarPage from './components/CalendarPage';
-import Setting from './components/Setting';
+import Setting from './components/Setting'; 
+import Upcomingtask from './components/Upcomingtask'; 
 import Profile from './components/Profile'; 
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
@@ -26,8 +28,22 @@ export default function App() {
     if (date) {
       setSelectedDate(date);
     }
-    setCurrentView(view);
+    setCurrentView(view.toLowerCase());
   };
+
+  const renderPlaceholderView = (title, description) => (
+    <div style={{ minHeight: '100vh', padding: '40px', boxSizing: 'border-box', background: theme === 'dark' ? '#0f172a' : '#f8fafc', color: theme === 'dark' ? '#f8fafc' : '#0f172a', fontFamily: 'sans-serif' }}>
+      <h1 style={{ marginTop: 0 }}>{title}</h1>
+      <p>{description}</p>
+      <button
+        type="button"
+        onClick={() => handleNavigate('dashboard')}
+        style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+      >
+        Back to dashboard
+      </button>
+    </div>
+  );
 
   const renderCurrentView = () => {
     // Convert to lowercase to prevent capitalization mismatches causing "Page not found"
@@ -51,6 +67,22 @@ export default function App() {
         return (
           <ForgotPassword 
             onSwitchToLogin={() => setCurrentView('login')} 
+          />
+        );
+      case 'profile':
+        return (
+          <Profile 
+            theme={theme} 
+            onLogout={() => setCurrentView('login')} 
+            onNavigate={handleNavigate}
+          />
+        );  
+      case 'team':
+        return (                      
+          <Team
+            theme={theme}
+            onLogout={() => setCurrentView('login')} 
+            onNavigate={handleNavigate} // <-- Passes theme down to Team
           />
         );
       case 'dashboard':
@@ -114,6 +146,16 @@ export default function App() {
         return (
           <Setting
             theme={theme}       // <-- Passes theme down to Setting
+            setTheme={setTheme} // <-- Passes setTheme down to Setting
+            onLogout={() => setCurrentView('login')}
+            onNavigate={handleNavigate}
+          />
+        );
+
+        case 'upcomingtask':
+        return (
+          <Upcomingtask
+            theme={theme}       
             setTheme={setTheme} // <-- Passes setTheme down to Setting
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
