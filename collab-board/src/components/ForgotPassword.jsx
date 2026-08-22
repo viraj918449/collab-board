@@ -33,7 +33,7 @@ export default function ForgotPassword({ onSwitchToLogin }) {
           <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between', marginTop: '40px', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
             <div>
               <strong>JWT Authentication</strong><br />
-              Secure login and protected routes for your data.
+              Secure login and protected  routes for your data.
             </div>
             <div>
               
@@ -62,7 +62,7 @@ export default function ForgotPassword({ onSwitchToLogin }) {
                 </label>
                 <input 
                   type="email" 
-                  placeholder="Enter your email address" 
+                  placeholder="Enter your email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={{ width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '14px', outline: 'none' }}
