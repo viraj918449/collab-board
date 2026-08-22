@@ -26,6 +26,12 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
           </div>
         </div>
 
+        <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>👥 <strong>Team Collaboration:</strong> Work together in real-time</div>
+            <div>🛡️ <strong>Secure & Reliable:</strong> Your data is safe always</div>
+            <div>☁️ <strong>Access Anywhere:</strong> Use from any device</div>
+        </div>
+
         {/* Right Side Form */}
         <div className="auth-right">
           <h2>Welcome back! 👋</h2>
