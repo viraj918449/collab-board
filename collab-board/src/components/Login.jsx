@@ -55,7 +55,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               <label style={{ fontSize: '13px', fontWeight: '500' }}>Password</label>
               <input 
                 type="password" 
-                placeholder="Enter your password" 
+                placeholder="Enter your  password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
