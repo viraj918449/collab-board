@@ -13,11 +13,11 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const inputBg = isDark ? '#0f172a' : '#ffffff';
 
   // Form State
-  const [fullName, setFullName] = useState('Jane Doe');
-  const [email, setEmail] = useState('doe@example.com');
+  const [fullName, setFullName] = useState('Upeksha MAdumali');
+  const [email, setEmail] = useState('upeksha@gmail.com');
   const [bio, setBio] = useState('Product designer passionate about creating beautiful and functional user experiences.');
-  const [location, setLocation] = useState('New York, USA');
-  const [website, setWebsite] = useState('https://janedoe.design');
+  const [location, setLocation] = useState('Colombo, Sri Lanka');
+  const [website, setWebsite] = useState('https://upeksha.ui.design');
   const [profileImage, setProfileImage] = useState(
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
    );
