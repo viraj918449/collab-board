@@ -13,7 +13,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const inputBg = isDark ? '#0f172a' : '#ffffff';
 
   // Form State
-  const [fullName, setFullName] = useState('Upeksha MAdumali');
+  const [fullName, setFullName] = useState('Upeksha Madumali');
   const [email, setEmail] = useState('upeksha@gmail.com');
   const [bio, setBio] = useState('Product designer passionate about creating beautiful and functional user experiences.');
   const [location, setLocation] = useState('Colombo, Sri Lanka');
