@@ -31,7 +31,7 @@ export default function NewTask({ onLogout, onNavigate, theme = 'light' }) {
       tags
     };
     console.log('Created Task:', newTaskData);
-    // Add your task creation logic or API call here, then navigate back
+    // Add your task creation logic or API call here, then navigate back //
     onNavigate('tasks');
   };
 
