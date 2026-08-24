@@ -145,7 +145,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
             <button 
               type="submit" 
               disabled={success}
-              style={{ width: '100%', padding: '12px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: success ? 'not-allowed' : 'pointer', opacity: success ? 0.7 : 1, transition: 'background 0.2s' }}
+              style={{ width: '100%', padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: success ? 'not-allowed' : 'pointer', opacity: success ? 0.7 : 1, transition: 'background 0.2s' }}
             >
               Sign Up
             </button>
@@ -155,7 +155,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
             Already have an account?{' '}
             <span 
               onClick={onSwitchToLogin} 
-              style={{ color: '#4F5D55', cursor: 'pointer', fontWeight: '500' }}
+              style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
             >
               Log in
             </span>

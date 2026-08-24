@@ -111,7 +111,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               
               <span 
                 onClick={onSwitchToForgot} 
-                style={{ color: '#4F5D55', cursor: 'pointer', fontWeight: '500' }}
+                style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
               >
                 Forgot password?
               </span>
@@ -119,7 +119,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
 
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '12px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
             >
               Log in →
             </button>
@@ -129,7 +129,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
             Don't have an account?{' '}
             <span 
               onClick={onSwitchToRegister} 
-              style={{ color: '#4F5D55', cursor: 'pointer', fontWeight: '500' }}
+              style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
             >
               Sign up
             </span>
