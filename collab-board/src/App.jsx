@@ -38,7 +38,7 @@ export default function App() {
       <button
         type="button"
         onClick={() => handleNavigate('dashboard')}
-        style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+        style={{ padding: '8px 16px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
       >
         Back to dashboard
       </button>
@@ -82,13 +82,13 @@ export default function App() {
           <Team
             theme={theme}
             onLogout={() => setCurrentView('login')} 
-            onNavigate={handleNavigate} // <-- Passes theme down to Team
+            onNavigate={handleNavigate} 
           />
         );
       case 'dashboard':
         return (
           <Dashboard 
-            theme={theme} // <-- Passes theme down to Dashboard
+            theme={theme} 
             onLogout={() => setCurrentView('login')} 
             onNavigate={handleNavigate}
           />
@@ -145,30 +145,21 @@ export default function App() {
       case 'setting':
         return (
           <Setting
-            theme={theme}       // <-- Passes theme down to Setting
-            setTheme={setTheme} // <-- Passes setTheme down to Setting
+            theme={theme}       
+            setTheme={setTheme} 
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
         );
-
-        case 'upcomingtask':
+      case 'upcomingtask':
         return (
           <Upcomingtask
             theme={theme}       
-            setTheme={setTheme} // <-- Passes setTheme down to Setting
+            setTheme={setTheme} 
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
         );
-      case 'profile':
-        return (
-          <Profile
-            theme={theme}
-            onLogout={() => setCurrentView('login')}
-            onNavigate={handleNavigate}
-          />
-      );
       case 'activity-history':
         return (
           <ActivityHistory
@@ -177,21 +168,13 @@ export default function App() {
             onNavigate={handleNavigate}
           />
       );
-      case 'team':
-        return (
-          <Team
-            theme={theme}
-            onLogout={() => setCurrentView('login')}
-            onNavigate={handleNavigate}
-          />
-      );
       default:
         return (
-          <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
+          <div style={{ padding: '40px', fontFamily: 'sans-serif', background: theme === 'dark' ? '#0f172a' : '#f8fafc', color: theme === 'dark' ? '#f8fafc' : '#0f172a', minHeight: '100vh' }}>
             <h2>Page not found: "{currentView}"</h2>
             <button 
               onClick={() => setCurrentView('dashboard')}
-              style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '10px' }}
+              style={{ padding: '8px 16px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', marginTop: '10px' }}
             >
               Back to Dashboard
             </button>

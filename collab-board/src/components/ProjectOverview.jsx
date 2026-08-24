@@ -1,5 +1,5 @@
 // src/components/ProjectOverview.jsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' }) {
   // Theme styling variables
@@ -11,19 +11,10 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
   const borderColor = isDark ? '#334155' : '#e2e8f0';
   const inputBg = isDark ? '#0f172a' : '#fff';
 
-  // State for tasks in columns
-  const [todoTasks, setTodoTasks] = useState([
-    { id: 1, title: 'Create wireframe', tag: 'Design', date: 'May 25', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-    { id: 2, title: 'Research competitors', tag: 'Research', date: 'May 26', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' }
-  ]);
-
-  const [inProgressTasks, setInProgressTasks] = useState([
-    { id: 3, title: 'Design homepage', tag: 'Design', date: 'May 23', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' }
-  ]);
-
-  const [doneTasks, setDoneTasks] = useState([
-    { id: 4, title: 'Project planning', tag: 'Planning', date: 'May 16', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100' }
-  ]);
+  // State for tasks in columns (Starting empty to fetch from API)
+  const [todoTasks, setTodoTasks] = useState([]);
+  const [inProgressTasks, setInProgressTasks] = useState([]);
+  const [doneTasks, setDoneTasks] = useState([]);
 
   // Modal states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -59,43 +50,87 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
     { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100' }
   ]);
 
+  // --- API INTEGRATION: FETCH TASKS ON LOAD ---
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const token = localStorage.getItem('collabToken');
+      const response = await fetch('http://localhost:5000/api/tasks', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Format data to ensure UI doesn't break if avatar/date is missing from backend
+        const formattedTasks = data.map(task => ({
+          ...task,
+          date: task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Aug 24',
+          avatar: task.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
+        }));
+
+        setTodoTasks(formattedTasks.filter(t => t.column === 'todo'));
+        setInProgressTasks(formattedTasks.filter(t => t.column === 'inprogress'));
+        setDoneTasks(formattedTasks.filter(t => t.column === 'done'));
+      }
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+    }
+  };
+
   const filteredTodoTasks = useMemo(() => {
-  return todoTasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-}, [todoTasks, searchQuery]);
+    return todoTasks.filter((task) =>
+      task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [todoTasks, searchQuery]);
 
-const filteredInProgressTasks = useMemo(() => {
-  return inProgressTasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-}, [inProgressTasks, searchQuery]);
+  const filteredInProgressTasks = useMemo(() => {
+    return inProgressTasks.filter((task) =>
+      task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [inProgressTasks, searchQuery]);
 
-const filteredDoneTasks = useMemo(() => {
-  return doneTasks.filter((task) =>
-    task.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-}, [doneTasks, searchQuery]);
+  const filteredDoneTasks = useMemo(() => {
+    return doneTasks.filter((task) =>
+      task.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [doneTasks, searchQuery]);
 
-
-  const handleAddTaskSubmit = (e) => {
+  // --- API INTEGRATION: ADD TASK ---
+  const handleAddTaskSubmit = async (e) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
 
-    const newTask = {
-      id: Date.now(),
-      title: newTaskTitle,
-      tag: newTaskTag,
-      date: 'Aug 20',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
-    };
+    try {
+      const token = localStorage.getItem('collabToken');
+      const response = await fetch('http://localhost:5000/api/tasks', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ title: newTaskTitle, tag: newTaskTag, column: newTaskColumn })
+      });
 
-    if (newTaskColumn === 'todo') setTodoTasks([...todoTasks, newTask]);
-    if (newTaskColumn === 'inprogress') setInProgressTasks([...inProgressTasks, newTask]);
-    if (newTaskColumn === 'done') setDoneTasks([...doneTasks, newTask]);
+      if (response.ok) {
+        const newTask = await response.json();
+        
+        // Format before updating UI
+        const formattedTask = { ...newTask, date: 'Aug 24', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' };
 
-    setNewTaskTitle('');
-    setIsTaskModalOpen(false);
+        if (newTaskColumn === 'todo') setTodoTasks([...todoTasks, formattedTask]);
+        if (newTaskColumn === 'inprogress') setInProgressTasks([...inProgressTasks, formattedTask]);
+        if (newTaskColumn === 'done') setDoneTasks([...doneTasks, formattedTask]);
+
+        setNewTaskTitle('');
+        setIsTaskModalOpen(false);
+      }
+    } catch (err) {
+      console.error('Failed to add task:', err);
+    }
   };
 
   const handleInviteSubmit = (e) => {
@@ -106,20 +141,27 @@ const filteredDoneTasks = useMemo(() => {
     setIsInviteModalOpen(false);
   };
 
-  // Delete Task Handler
-  const handleDeleteTask = (taskId, column) => {
+  // --- API INTEGRATION: DELETE TASK ---
+  const handleDeleteTask = async (taskId, column) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      if (column === 'todo') {
-        setTodoTasks(todoTasks.filter(task => task.id !== taskId));
-      } else if (column === 'inprogress') {
-        setInProgressTasks(inProgressTasks.filter(task => task.id !== taskId));
-      } else if (column === 'done') {
-        setDoneTasks(doneTasks.filter(task => task.id !== taskId));
+      try {
+        const token = localStorage.getItem('collabToken');
+        const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          if (column === 'todo') setTodoTasks(todoTasks.filter(task => task.id !== taskId));
+          else if (column === 'inprogress') setInProgressTasks(inProgressTasks.filter(task => task.id !== taskId));
+          else if (column === 'done') setDoneTasks(doneTasks.filter(task => task.id !== taskId));
+        }
+      } catch (err) {
+        console.error('Failed to delete task:', err);
       }
     }
   };
 
-  // Edit Task Handler - Open Modal
   const handleEditTask = (task, column) => {
     setEditingTaskId(task.id);
     setEditingTaskColumn(column);
@@ -128,30 +170,39 @@ const filteredDoneTasks = useMemo(() => {
     setIsEditModalOpen(true);
   };
 
-  // Edit Task Submit Handler
-  const handleEditTaskSubmit = (e) => {
+  // --- API INTEGRATION: EDIT TASK ---
+  const handleEditTaskSubmit = async (e) => {
     e.preventDefault();
     if (!editTaskTitle.trim()) return;
 
-    if (editingTaskColumn === 'todo') {
-      setTodoTasks(todoTasks.map(task => 
-        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
-      ));
-    } else if (editingTaskColumn === 'inprogress') {
-      setInProgressTasks(inProgressTasks.map(task => 
-        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
-      ));
-    } else if (editingTaskColumn === 'done') {
-      setDoneTasks(doneTasks.map(task => 
-        task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
-      ));
-    }
+    try {
+      const token = localStorage.getItem('collabToken');
+      const response = await fetch(`http://localhost:5000/api/tasks/${editingTaskId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({ title: editTaskTitle, tag: editTaskTag, column: editingTaskColumn })
+      });
 
-    setIsEditModalOpen(false);
-    setEditingTaskId(null);
+      if (response.ok) {
+        const updateState = (tasksArray) => tasksArray.map(task => 
+          task.id === editingTaskId ? { ...task, title: editTaskTitle, tag: editTaskTag } : task
+        );
+
+        if (editingTaskColumn === 'todo') setTodoTasks(updateState(todoTasks));
+        else if (editingTaskColumn === 'inprogress') setInProgressTasks(updateState(inProgressTasks));
+        else if (editingTaskColumn === 'done') setDoneTasks(updateState(doneTasks));
+
+        setIsEditModalOpen(false);
+        setEditingTaskId(null);
+      }
+    } catch (err) {
+      console.error('Failed to update task:', err);
+    }
   };
 
-  // Assign Team Member Handler - Open Modal
   const handleAssignTask = (taskId, column) => {
     setAssigningTaskId(taskId);
     setAssigningTaskColumn(column);
@@ -159,34 +210,46 @@ const filteredDoneTasks = useMemo(() => {
     setIsAssignModalOpen(true);
   };
 
-  // Assign Team Member Submit Handler
-  const handleAssignMemberSubmit = (e) => {
+  // --- API INTEGRATION: ASSIGN MEMBER ---
+  const handleAssignMemberSubmit = async (e) => {
     e.preventDefault();
     if (!assignMemberEmail.trim()) return;
 
     const member = teamMembers.find(m => m.email === assignMemberEmail);
-    if (!member) {
-      alert('Team member not found!');
-      return;
-    }
+    if (!member) return alert('Team member not found!');
 
-    if (assigningTaskColumn === 'todo') {
-      setTodoTasks(todoTasks.map(task => 
-        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
-      ));
-    } else if (assigningTaskColumn === 'inprogress') {
-      setInProgressTasks(inProgressTasks.map(task => 
-        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
-      ));
-    } else if (assigningTaskColumn === 'done') {
-      setDoneTasks(doneTasks.map(task => 
-        task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
-      ));
-    }
+    try {
+      // Find the existing task data to preserve title and tag in the PUT request
+      const allTasks = [...todoTasks, ...inProgressTasks, ...doneTasks];
+      const taskToUpdate = allTasks.find(t => t.id === assigningTaskId);
+      
+      const token = localStorage.getItem('collabToken');
+      const response = await fetch(`http://localhost:5000/api/tasks/${assigningTaskId}`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        // In a full DB, you would save the assigned member ID here too
+        body: JSON.stringify({ title: taskToUpdate.title, tag: taskToUpdate.tag, column: assigningTaskColumn })
+      });
 
-    alert(`Task assigned to ${member.name}!`);
-    setIsAssignModalOpen(false);
-    setAssigningTaskId(null);
+      if (response.ok) {
+        const updateState = (tasksArray) => tasksArray.map(task => 
+          task.id === assigningTaskId ? { ...task, avatar: member.avatar, email: member.email } : task
+        );
+
+        if (assigningTaskColumn === 'todo') setTodoTasks(updateState(todoTasks));
+        else if (assigningTaskColumn === 'inprogress') setInProgressTasks(updateState(inProgressTasks));
+        else if (assigningTaskColumn === 'done') setDoneTasks(updateState(doneTasks));
+
+        alert(`Task assigned to ${member.name}!`);
+        setIsAssignModalOpen(false);
+        setAssigningTaskId(null);
+      }
+    } catch (err) {
+      console.error('Failed to assign member:', err);
+    }
   };
 
   return (
@@ -195,7 +258,7 @@ const filteredDoneTasks = useMemo(() => {
       {/* Sidebar */}
       <div style={{ width: '240px', background: cardBg, borderRight: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', padding: '20px', boxSizing: 'border-box' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 'bold', marginBottom: '30px', color: textColor }}>
-          <span style={{ background: '#2563eb', color: 'white', padding: '6px', borderRadius: '8px' }}>📅</span> CollabBoard
+          <span style={{ background: '#4F5D55', color: 'white', padding: '6px', borderRadius: '8px' }}>📅</span> CollabBoard
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
@@ -211,7 +274,7 @@ const filteredDoneTasks = useMemo(() => {
           <div onClick={() => onNavigate('team')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
             👥 Team
           </div>
-          <div onClick={() => onNavigate('ProjectOverview')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#2563eb', color: 'white', borderRadius: '8px', fontWeight: '500', cursor: 'pointer' }}>
+          <div onClick={() => onNavigate('ProjectOverview')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#4F5D55', color: 'white', borderRadius: '8px', fontWeight: '500', cursor: 'pointer' }}>
             📁 Project Overview
           </div>
           <div onClick={() => onNavigate('setting')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', color: subTextColor, borderRadius: '8px', cursor: 'pointer' }}>
@@ -258,7 +321,7 @@ const filteredDoneTasks = useMemo(() => {
           </div>
           <button 
             onClick={() => setIsTaskModalOpen(true)}
-            style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', fontSize: '13px' }}
+            style={{ padding: '8px 16px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', cursor: 'pointer', fontSize: '13px' }}
           >
             + Add Task
           </button>
@@ -472,7 +535,7 @@ const filteredDoneTasks = useMemo(() => {
                 </button>
                 <button 
                   type="submit" 
-                  style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+                  style={{ padding: '8px 16px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
                 >
                   Add Task
                 </button>
@@ -509,7 +572,7 @@ const filteredDoneTasks = useMemo(() => {
                 </button>
                 <button 
                   type="submit" 
-                  style={{ padding: '8px 16px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
+                  style={{ padding: '8px 16px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}
                 >
                   Send Invite
                 </button>

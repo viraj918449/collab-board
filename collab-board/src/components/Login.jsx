@@ -2,14 +2,41 @@
 import React, { useState } from 'react';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // Changed to email to match backend API
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState(''); // Added to handle backend errors
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // For Milestone 1 skeleton, bypass real auth and trigger success
-    onLoginSuccess();
+    setError(''); // Clear any previous errors
+
+    try {
+      // Connect to the real Express endpoint
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      // If the server returns a 401 or 400, throw the error
+      if (!response.ok) {
+        throw new Error(data.error || 'Invalid login credentials.');
+      }
+
+      // Store the JWT token securely for future API calls
+      localStorage.setItem('collabToken', data.token);
+      
+      // Trigger the app to navigate to the dashboard
+      onLoginSuccess();
+      
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   return (
@@ -19,7 +46,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
         <div className="auth-left">
           <div>
             <h3>📅 CollabBoard</h3>
-            <h2>Plan. Collaborate.<br /><span style={{ color: '#2563eb' }}>Get things done.</span></h2>
+            <h2>Plan. Collaborate.<br /><span style={{ color: '#4F5D55' }}>Get things done.</span></h2>
             <p style={{ fontSize: '14px', color: '#64748b' }}>
               CollabBoard helps your team stay organized, focused, and in sync - anytime, anywhere.
             </p>
@@ -38,14 +65,21 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
             Log in to your CollabBoard Account
           </p>
 
+          {/* New Error Message Display */}
+          {error && (
+            <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '8px', fontSize: '13px', border: '1px solid #f87171' }}>
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '15px' }}>
-              <label style={{ fontSize: '13px', fontWeight: '500' }}>Username</label>
+              <label style={{ fontSize: '13px', fontWeight: '500' }}>Email Address</label>
               <input 
-                type="text" 
-                placeholder="Enter your username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email" 
+                placeholder="Enter your email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
                 required
               />
@@ -55,7 +89,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               <label style={{ fontSize: '13px', fontWeight: '500' }}>Password</label>
               <input 
                 type="password" 
-                placeholder="Enter your  password" 
+                placeholder="Enter your password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 style={{ width: '100%', padding: '10px', marginTop: '5px', borderRadius: '8px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
@@ -77,7 +111,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               
               <span 
                 onClick={onSwitchToForgot} 
-                style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
+                style={{ color: '#4F5D55', cursor: 'pointer', fontWeight: '500' }}
               >
                 Forgot password?
               </span>
@@ -85,7 +119,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
 
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '12px', background: '#1d4ed8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '12px', background: '#4F5D55', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
             >
               Log in →
             </button>
@@ -95,7 +129,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
             Don't have an account?{' '}
             <span 
               onClick={onSwitchToRegister} 
-              style={{ color: '#2563eb', cursor: 'pointer', fontWeight: '500' }}
+              style={{ color: '#4F5D55', cursor: 'pointer', fontWeight: '500' }}
             >
               Sign up
             </span>
