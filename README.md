@@ -7,7 +7,6 @@
 
 CollabBoard is a decoupled, full-stack project management application designed to help teams organize tasks, track progress across Kanban columns, and collaborate seamlessly. It features a custom dual-theme UI (Dark/Light mode) with signature forest green (`#4F5D55`) accents and secure RESTful backend communication.
 
-**Author:** Viraj Nadishan Vithanaarachchi
 
 ---
 
