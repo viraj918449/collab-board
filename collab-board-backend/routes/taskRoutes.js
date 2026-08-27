@@ -1,19 +1,16 @@
 // routes/taskRoutes.js
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
-const { 
-  getAllTasks, 
-  createTask, 
-  updateTask, 
-  deleteTask 
-} = require('../controllers/taskController');
+const { getTasks, createTask, updateTask, deleteTask } = require('../controllers/taskController');
+const { protect } = require('../middleware/authMiddleware'); // Your JWT protection
 
-// Protect all task routes with our JWT middleware
-router.use(auth);
+// All task routes require the user to be logged in
+router.use(protect); 
 
-// Endpoints mapping to controller functions
-router.get('/', getAllTasks);
+// Route to get tasks for a specific board
+router.get('/board/:boardId', getTasks);
+
+// Routes for creating, updating, and deleting tasks
 router.post('/', createTask);
 router.put('/:id', updateTask);
 router.delete('/:id', deleteTask);

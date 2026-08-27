@@ -1,60 +1,58 @@
 // controllers/taskController.js
+const Task = require('../models/Task');
 
-// Temporary mock array (will be replaced by MongoDB/Mongoose later)
-let tasks = [];
-
-// GET: Retrieve all tasks
-exports.getAllTasks = (req, res) => {
-  // In a real app, you might filter by req.user.id here to only show the logged-in user's tasks
-  res.status(200).json(tasks);
+// Get all tasks for a specific board
+exports.getTasks = async (req, res) => {
+  try {
+    const { boardId } = req.params; // Get the board ID from the URL
+    const tasks = await Task.find({ boardId }); 
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch tasks' });
+  }
 };
 
-// POST: Create a new task
-exports.createTask = (req, res) => {
-  const { title, tag, column } = req.body;
-  
-  if (!title) {
-    return res.status(400).json({ error: 'Task title is required' });
-  }
+// Create a new task inside a board
+exports.createTask = async (req, res) => {
+  try {
+    const { title, tag, column, boardId } = req.body;
+    
+    const newTask = await Task.create({
+      title,
+      tag,
+      column,
+      boardId,
+      createdBy: req.user.id // From auth middleware
+    });
 
-  const newTask = {
-    id: Date.now().toString(),
-    title,
-    tag: tag || 'General',
-    column: column || 'todo',
-    userId: req.user.id, // Extracted from the JWT token via your auth middleware
-    createdAt: new Date().toISOString()
-  };
-  
-  tasks.push(newTask);
-  res.status(201).json(newTask);
+    res.status(201).json(newTask);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create task' });
+  }
 };
 
-// PUT: Update an existing task (e.g., dragging to a new column)
-exports.updateTask = (req, res) => {
-  const { id } = req.params;
-  const { title, tag, column } = req.body;
-  
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Task not found' });
-  }
+// Update a task (e.g., moving from 'todo' to 'done')
+exports.updateTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
 
-  // Update the task data while keeping the existing id and userId
-  tasks[taskIndex] = { ...tasks[taskIndex], title, tag, column };
-  
-  res.status(200).json(tasks[taskIndex]);
+    if (!updatedTask) return res.status(404).json({ error: 'Task not found' });
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update task' });
+  }
 };
 
-// DELETE: Remove a task
-exports.deleteTask = (req, res) => {
-  const { id } = req.params;
-  const taskIndex = tasks.findIndex(t => t.id === id);
-  
-  if (taskIndex === -1) {
-    return res.status(404).json({ error: 'Task not found' });
+// Delete a task
+exports.deleteTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedTask = await Task.findByIdAndDelete(id);
+    
+    if (!deletedTask) return res.status(404).json({ error: 'Task not found' });
+    res.json({ message: 'Task deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete task' });
   }
-
-  tasks.splice(taskIndex, 1);
-  res.status(200).json({ message: 'Task deleted successfully' });
 };
