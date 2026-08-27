@@ -2,15 +2,15 @@
 const express = require('express');
 const router = express.Router();
 const { getTasks, createTask, updateTask, deleteTask } = require('../controllers/taskController');
-const { protect } = require('../middleware/authMiddleware'); // Your JWT protection
 
-// All task routes require the user to be logged in
+// Import the 'protect' middleware you just saved
+const { protect } = require('../middleware/auth'); 
+
+// Apply the middleware to ALL routes in this file
 router.use(protect); 
 
-// Route to get tasks for a specific board
+// Your protected endpoints
 router.get('/board/:boardId', getTasks);
-
-// Routes for creating, updating, and deleting tasks
 router.post('/', createTask);
 router.put('/:id', updateTask);
 router.delete('/:id', deleteTask);
