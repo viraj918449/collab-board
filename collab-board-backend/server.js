@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes'); 
+const boardRoutes = require('./routes/boardRoutes');
 
 // 2. Run the database connection
 connectDB();
@@ -21,6 +22,7 @@ app.use(express.json()); // Allows the server to parse JSON bodies in requests
 
 // Route Middleware
 app.use('/api/auth', authRoutes);
+app.use('/api/boards', boardRoutes);
 app.use('/api/tasks', taskRoutes); // Tasks are now fully active!
 
 // Basic health check route

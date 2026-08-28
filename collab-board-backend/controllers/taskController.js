@@ -1,9 +1,21 @@
 const Task = require('../models/Task');
+const Board = require('../models/Board');
+const mongoose = require('mongoose');
+const { isBoardMember } = require('./boardController');
+
+const canAccessBoard = async (boardId, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(boardId)) return null;
+  const board = await Board.findById(boardId);
+  return board && isBoardMember(board, userId) ? board : null;
+};
 
 // Get all tasks for a specific board
 exports.getTasks = async (req, res) => {
   try {
     const { boardId } = req.params; // Get the board ID from the URL
+    if (!await canAccessBoard(boardId, req.user.id)) {
+      return res.status(403).json({ error: 'You do not have access to this board' });
+    }
     const tasks = await Task.find({ boardId }); 
     res.json(tasks);
   } catch (error) {
@@ -15,6 +27,9 @@ exports.getTasks = async (req, res) => {
 exports.createTask = async (req, res) => {
   try {
     const { title, tag, column, boardId } = req.body;
+    if (!await canAccessBoard(boardId, req.user.id)) {
+      return res.status(403).json({ error: 'You do not have access to this board' });
+    }
     
     const newTask = await Task.create({
       title,
@@ -34,7 +49,21 @@ exports.createTask = async (req, res) => {
 exports.updateTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid task id' });
+    const task = await Task.findById(id);
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!await canAccessBoard(task.boardId, req.user.id)) {
+      return res.status(403).json({ error: 'You do not have access to this task' });
+    }
+    if (req.body.boardId && !await canAccessBoard(req.body.boardId, req.user.id)) {
+      return res.status(403).json({ error: 'You do not have access to the target board' });
+    }
+
+    const allowedUpdates = ['title', 'tag', 'column', 'boardId'];
+    allowedUpdates.forEach((field) => {
+      if (req.body[field] !== undefined) task[field] = req.body[field];
+    });
+    const updatedTask = await task.save();
 
     if (!updatedTask) return res.status(404).json({ error: 'Task not found' });
     res.json(updatedTask);
@@ -47,9 +76,14 @@ exports.updateTask = async (req, res) => {
 exports.deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const deletedTask = await Task.findByIdAndDelete(id);
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid task id' });
+    const task = await Task.findById(id);
+    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!await canAccessBoard(task.boardId, req.user.id)) {
+      return res.status(403).json({ error: 'You do not have access to this task' });
+    }
+    await task.deleteOne();
     
-    if (!deletedTask) return res.status(404).json({ error: 'Task not found' });
     res.json({ message: 'Task deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete task' });
