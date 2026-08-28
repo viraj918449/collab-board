@@ -1,18 +1,19 @@
-// config/db.js
-const mongoose = require('mongoose');
+require("dotenv").config();
+const { MongoClient } = require("mongodb");
 
-const connectDB = async () => {
-  try {
-    // Attempt to connect to MongoDB Atlas using the URI in your .env file
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    
-    // If successful, log the connection host to the terminal
-    console.log(`MongoDB Connected: ${conn.connection.host} `);
-  } catch (error) {
-    // If it fails, log the exact error message so we can fix it
-    console.error(`MongoDB Connection Error: ${error.message}`);
-    process.exit(1); // Exit the process with failure
+async function connectDB() {
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    throw new Error("MONGO_URI is undefined in environment variables");
   }
-};
+  const client = new MongoClient(uri);
+  try {
+    await client.connect();
+    console.log("Connected to MongoDB 🚀");
+  } catch (error) {
+    console.error("MongoDB Connection Error:", error.message);
+    process.exit(1);
+  }
+}
 
 module.exports = connectDB;

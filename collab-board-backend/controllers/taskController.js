@@ -1,57 +1,78 @@
 const Task = require('../models/Task');
 
-// Get all tasks for a specific board
-exports.getTasks = async (req, res) => {
+const getTasks = async (req, res) => {
   try {
-    const { boardId } = req.params; // Get the board ID from the URL
-    const tasks = await Task.find({ boardId }); 
-    res.json(tasks);
+    const tasks = await Task.find({ boardId: req.params.boardId });
+    res.status(200).json(tasks);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Create a new task inside a board
-exports.createTask = async (req, res) => {
+const createTask = async (req, res) => {
   try {
-    const { title, tag, column, boardId } = req.body;
-    
-    const newTask = await Task.create({
-      title,
-      tag,
-      column,
-      boardId,
-      createdBy: req.user.id // From auth middleware
+    if (!req.body.title) {
+      return res.status(400).json({ message: 'Please add a task title' });
+    }
+
+    const task = await Task.create({
+      title: req.body.title,
+      description: req.body.description,
+      boardId: req.body.boardId,
+      user: req.user.id
     });
 
-    res.status(201).json(newTask);
+    res.status(201).json(task);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create task' });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update a task (e.g., moving from 'todo' to 'done')
-exports.updateTask = async (req, res) => {
+// @desc    Update a task
+// @route   PUT /api/tasks/:id
+// @access  Private
+const updateTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
+    const task = await Task.findById(req.params.id);
 
-    if (!updatedTask) return res.status(404).json({ error: 'Task not found' });
-    res.json(updatedTask);
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    res.status(200).json(updatedTask);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update task' });
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Delete a task
-exports.deleteTask = async (req, res) => {
+// @desc    Delete a task
+// @route   DELETE /api/tasks/:id
+// @access  Private
+const deleteTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const deletedTask = await Task.findByIdAndDelete(id);
-    
-    if (!deletedTask) return res.status(404).json({ error: 'Task not found' });
-    res.json({ message: 'Task deleted successfully' });
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    await task.deleteOne();
+
+    res.status(200).json({ id: req.params.id, message: 'Task removed' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete task' });
+    res.status(500).json({ message: error.message });
   }
+};
+
+module.exports = {
+  getTasks,
+  createTask,
+  updateTask,
+  deleteTask
 };
