@@ -1,5 +1,7 @@
 // src/components/ProjectOverview.jsx
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+
+const API_BASE_URL = 'http://localhost:5000/api';
 
 export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' }) {
   // Theme styling variables
@@ -15,6 +17,8 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
   const [todoTasks, setTodoTasks] = useState([]);
   const [inProgressTasks, setInProgressTasks] = useState([]);
   const [doneTasks, setDoneTasks] = useState([]);
+  const [boardId, setBoardId] = useState(null);
+  const boardInitializationStarted = useRef(false);
 
   // Modal states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -50,36 +54,71 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
     { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100' }
   ]);
 
-  // --- API INTEGRATION: FETCH TASKS ON LOAD ---
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+  const formatTask = (task) => ({
+    ...task,
+    id: task._id,
+    date: task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Aug 24',
+    avatar: task.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
+  });
 
-  const fetchTasks = async () => {
+  const initializeBoard = async () => {
     try {
       const token = localStorage.getItem('collabToken');
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_BASE_URL}/boards`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Format data to ensure UI doesn't break if avatar/date is missing from backend
-        const formattedTasks = data.map(task => ({
-          ...task,
-          date: task.createdAt ? new Date(task.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Aug 24',
-          avatar: task.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'
-        }));
+      if (!response.ok) return;
 
-        setTodoTasks(formattedTasks.filter(t => t.column === 'todo'));
-        setInProgressTasks(formattedTasks.filter(t => t.column === 'inprogress'));
-        setDoneTasks(formattedTasks.filter(t => t.column === 'done'));
+      const boards = await response.json();
+      let activeBoard = boards[0];
+
+      // The current design has no board-creation screen. Create one default
+      // board for a new user so the existing task UI can work unchanged.
+      if (!activeBoard) {
+        const createResponse = await fetch(`${API_BASE_URL}/boards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ name: 'My Board' })
+        });
+        if (!createResponse.ok) return;
+        activeBoard = await createResponse.json();
+      }
+
+      setBoardId(activeBoard._id);
+      fetchTasks(activeBoard._id);
+    } catch (err) {
+      console.error('Error loading board:', err);
+    }
+  };
+
+  const fetchTasks = async (activeBoardId) => {
+    try {
+      const token = localStorage.getItem('collabToken');
+      const response = await fetch(`${API_BASE_URL}/tasks/board/${activeBoardId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const formattedTasks = (await response.json()).map(formatTask);
+        setTodoTasks(formattedTasks.filter((task) => task.column === 'todo'));
+        setInProgressTasks(formattedTasks.filter((task) => task.column === 'inprogress'));
+        setDoneTasks(formattedTasks.filter((task) => task.column === 'done'));
       }
     } catch (err) {
       console.error('Error fetching tasks:', err);
     }
   };
+
+  // Load the user's first board before loading tasks. The UI remains unchanged,
+  // but every task operation is now scoped to a board.
+  useEffect(() => {
+    if (boardInitializationStarted.current) return;
+    boardInitializationStarted.current = true;
+    initializeBoard();
+  }, []);
 
   const filteredTodoTasks = useMemo(() => {
     return todoTasks.filter((task) =>
@@ -102,24 +141,24 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
   // --- API INTEGRATION: ADD TASK ---
   const handleAddTaskSubmit = async (e) => {
     e.preventDefault();
-    if (!newTaskTitle.trim()) return;
+    if (!newTaskTitle.trim() || !boardId) return;
 
     try {
       const token = localStorage.getItem('collabToken');
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ title: newTaskTitle, tag: newTaskTag, column: newTaskColumn })
+        body: JSON.stringify({ title: newTaskTitle, tag: newTaskTag, column: newTaskColumn, boardId })
       });
 
       if (response.ok) {
         const newTask = await response.json();
         
         // Format before updating UI
-        const formattedTask = { ...newTask, date: 'Aug 24', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' };
+        const formattedTask = formatTask(newTask);
 
         if (newTaskColumn === 'todo') setTodoTasks([...todoTasks, formattedTask]);
         if (newTaskColumn === 'inprogress') setInProgressTasks([...inProgressTasks, formattedTask]);
@@ -146,7 +185,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         const token = localStorage.getItem('collabToken');
-        const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -177,7 +216,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
 
     try {
       const token = localStorage.getItem('collabToken');
-      const response = await fetch(`http://localhost:5000/api/tasks/${editingTaskId}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${editingTaskId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -224,7 +263,7 @@ export default function ProjectOverview({ onNavigate, onLogout, theme = 'light' 
       const taskToUpdate = allTasks.find(t => t.id === assigningTaskId);
       
       const token = localStorage.getItem('collabToken');
-      const response = await fetch(`http://localhost:5000/api/tasks/${assigningTaskId}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${assigningTaskId}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

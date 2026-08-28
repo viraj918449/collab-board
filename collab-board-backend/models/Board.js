@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const boardSchema = new mongoose.Schema({
   name: { 
     type: String, 
-    required: true 
+    required: true,
+    trim: true
   },
   description: { 
     type: String 
@@ -15,7 +16,7 @@ const boardSchema = new mongoose.Schema({
   },
   members: [{ 
     type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+    ref: 'User'
   }]
 }, { 
   timestamps: true 
