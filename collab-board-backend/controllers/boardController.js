@@ -1,4 +1,3 @@
-// controllers/boardController.js
 const Board = require('../models/Board');
 
 // Get all boards for the logged-in user (boards they own OR are a member of)

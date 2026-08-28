@@ -1,4 +1,3 @@
-// controllers/taskController.js
 const Task = require('../models/Task');
 
 // Get all tasks for a specific board

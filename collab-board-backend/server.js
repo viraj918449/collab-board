@@ -3,9 +3,15 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+// 1. Import the MongoDB connection
+const connectDB = require('./config/db'); 
+
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
-// const taskRoutes = require('./routes/taskRoutes'); // Placeholder for our next step
+const taskRoutes = require('./routes/taskRoutes'); 
+
+// 2. Run the database connection
+connectDB();
 
 const app = express();
 
@@ -15,11 +21,11 @@ app.use(express.json()); // Allows the server to parse JSON bodies in requests
 
 // Route Middleware
 app.use('/api/auth', authRoutes);
-// app.use('/api/tasks', taskRoutes); // Placeholder for our next step
+app.use('/api/tasks', taskRoutes); // Tasks are now fully active!
 
 // Basic health check route
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ message: 'CollabBoard API is running!' });
+  res.status(200).json({ message: 'Collab-board API is running!' });
 });
 
 // Start the server
