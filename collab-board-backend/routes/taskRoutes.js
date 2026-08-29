@@ -1,19 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getTasks, 
-  createTask, 
-  updateTask, 
-  deleteTask 
-} = require('../controllers/taskController');
+const taskController = require('../controllers/taskController');
 
-const { protect } = require('../middleware/auth'); 
+// 1. Import the protect middleware correctly (no curly braces)
+const protect = require('../middleware/auth');
 
-router.use(protect); 
+// 2. Apply the protect middleware to ALL task routes 
+// (This is likely where your line 12 error was happening!)
+router.use(protect);
 
-router.get('/board/:boardId', getTasks);
-router.post('/', createTask);
-router.put('/:id', updateTask);
-router.delete('/:id', deleteTask);
+// 3. Define the routes
+router.get('/:boardId', taskController.getTasks);
+router.post('/', taskController.createTask);
+router.put('/:id', taskController.updateTask);
+router.delete('/:id', taskController.deleteTask);
 
 module.exports = router;
