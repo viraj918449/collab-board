@@ -24,6 +24,7 @@ const createTask = async (req, res) => {
       title: req.body.title,
       description: req.body.description,
       boardId: req.body.boardId,
+      status: req.body.status || 'To Do', // Defaults to 'To Do' column
       user: userId
     });
 
@@ -44,7 +45,7 @@ const updateTask = async (req, res) => {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     res.status(200).json(updatedTask);

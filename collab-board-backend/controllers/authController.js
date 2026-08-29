@@ -1,34 +1,35 @@
-// controllers/authController.js
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Temporary mock array (will be replaced by MongoDB later)
-let users = [];
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
-exports.register = (req, res) => {
-  const { email, password } = req.body;
-  
-  // Check if user already exists
-  if (users.find(u => u.email === email)) {
-    return res.status(400).json({ error: 'User already exists' });
+    const user = new User({ name, email, password });
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  
-  const newUser = { id: Date.now(), email, password };
-  users.push(newUser);
-  
-  res.status(201).json({ message: 'User registered successfully' });
 };
 
-exports.login = (req, res) => {
-  const { email, password } = req.body;
-  
-  // Find user with matching credentials
-  const user = users.find(u => u.email === email && u.password === password);
-  if (!user) {
-    return res.status(401).json({ error: 'Invalid credentials' });
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  
-  // Generate JWT valid for 1 hour
-  const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-  res.json({ token, email: user.email });
 };
