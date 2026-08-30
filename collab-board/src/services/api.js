@@ -62,6 +62,7 @@ export const loginUser = async (userData) => {
 
 export const requestPasswordReset = async (email) => API.post('/auth/forgot-password', { email });
 export const resetPassword = async (data) => API.post('/auth/reset-password', data);
+export const changePassword = async (passwords) => API.put('/auth/change-password', passwords);
 
 export const getCurrentUser = async () => {
   return API.get('/auth/me');

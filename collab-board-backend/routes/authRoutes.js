@@ -9,6 +9,7 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/forgot-password', authController.requestPasswordReset);
 router.post('/reset-password', authController.resetPassword);
+router.put('/change-password', protect, authController.changePassword);
 
 // --- PROTECTED ROUTE ---
 router.get('/me', protect, async (req, res) => {

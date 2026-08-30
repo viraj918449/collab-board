@@ -189,3 +189,40 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ error: 'Unable to reset password. Please try again.' });
   }
 };
+
+// Change password for an authenticated user.
+exports.changePassword = async (req, res) => {
+  try {
+    const currentPassword = String(req.body.currentPassword || '');
+    const newPassword = String(req.body.newPassword || '');
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Current password and new password are required.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+    }
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: 'Your new password must be different from your current password.' });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+      return res.status(401).json({ error: 'Your session is no longer valid. Please sign in again.' });
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ error: 'Your current password is incorrect.' });
+    }
+
+    // The User model hashes a modified password before saving.
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ error: 'Unable to update your password. Please try again.' });
+  }
+};

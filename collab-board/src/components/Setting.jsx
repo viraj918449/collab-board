@@ -1,5 +1,6 @@
 // src/components/Setting.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { changePassword, getCurrentUser } from '../services/api';
 
 export default function Setting({ onLogout, onNavigate, theme = 'light', setTheme, selectedDate = '20 August 2026' }) {
   const isDark = theme === 'dark';
@@ -13,25 +14,55 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [accountEmail, setAccountEmail] = useState('');
   
   // Other settings toggles state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
-  const handleUpdatePassword = (e) => {
+  useEffect(() => {
+    try {
+      const savedUser = JSON.parse(localStorage.getItem('collabUser') || 'null');
+      if (savedUser?.email) setAccountEmail(savedUser.email);
+    } catch {
+      localStorage.removeItem('collabUser');
+    }
+
+    getCurrentUser()
+      .then(({ data }) => {
+        setAccountEmail(data.email || '');
+        localStorage.setItem('collabUser', JSON.stringify(data));
+      })
+      .catch(() => {
+        // The saved profile, if available, is enough to render the account card.
+      });
+  }, []);
+
+  const handleUpdatePassword = async (e) => {
     e.preventDefault();
+    setPasswordMessage('');
     if (!currentPassword || !newPassword || !confirmPassword) {
-      alert('Please fill in all password fields.');
+      setPasswordMessage('Please fill in all password fields.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      alert('New passwords do not match.');
+      setPasswordMessage('New passwords do not match.');
       return;
     }
-    alert('Password updated successfully!');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      setIsUpdatingPassword(true);
+      const { data } = await changePassword({ currentPassword, newPassword });
+      setPasswordMessage(data.message || 'Password updated successfully.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordMessage(err.response?.data?.error || err.response?.data?.message || 'Unable to update your password. Please try again.');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   return (
@@ -120,6 +151,11 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
             </div>
 
             <form onSubmit={handleUpdatePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {passwordMessage && (
+                <p role="status" style={{ margin: 0, fontSize: '12px', color: passwordMessage === 'Password updated successfully.' ? '#16a34a' : '#dc2626' }}>
+                  {passwordMessage}
+                </p>
+              )}
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 'bold', color: textColor }}>Current Password</label>
@@ -156,24 +192,25 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
 
               <button 
                 type="submit" 
+                disabled={isUpdatingPassword}
                 style={{ padding: '10px 20px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', alignSelf: 'flex-start', marginTop: '6px' }}
               >
-                Update Password
+                {isUpdatingPassword ? 'Updating...' : 'Update Password'}
               </button>
 
             </form>
 
           </div>
 
-          {/* Right Column (Google Account & Appearance Cards) */}
+          {/* Right Column (Account & Appearance Cards) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* Google Account Card */}
+            {/* Account Card */}
             <div style={{ background: cardBg, padding: '24px', borderRadius: '12px', border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 'bold', color: textColor }}>Google Account</h3>
-                  <p style={{ margin: 0, fontSize: '12px', color: subTextColor }}>Manage your connected Google account.</p>
+                  <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 'bold', color: textColor }}>Account</h3>
+                  <p style={{ margin: 0, fontSize: '12px', color: subTextColor }}>Manage your account details.</p>
                 </div>
                 <span style={{ fontSize: '18px' }}>🌐</span>
               </div>
@@ -181,11 +218,11 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
               <div style={{ background: isDark ? '#0f172a' : '#f8fafc', padding: '14px', borderRadius: '8px', border: `1px solid ${borderColor}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div style={{ width: '32px', height: '32px', background: borderColor, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: subTextColor }}>
-                    s
+                    {(accountEmail.charAt(0) || '?').toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: textColor }}>selin.dilshan@gmail.com</div>
-                    <div style={{ fontSize: '11px', color: subTextColor }}>Connected</div>
+                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: textColor }}>{accountEmail || 'Email not available'}</div>
+                    <div style={{ fontSize: '11px', color: subTextColor }}>Signed in</div>
                   </div>
                 </div>
               </div>
