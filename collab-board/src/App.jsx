@@ -15,6 +15,7 @@ import Profile from './components/Profile';
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
 import Board from './components/Board';
+import ProjectOverview from './components/ProjectOverview';
 import NewTask from './components/NewTask';
 import './App.css';
 
@@ -26,6 +27,7 @@ export default function App() {
     year: 'numeric',
   });
   const [selectedDate, setSelectedDate] = useState(() => formatDate());
+  const [selectedBoardId, setSelectedBoardId] = useState('');
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
   const [dashboardTasks, setDashboardTasks] = useState(() => {
     try {
@@ -55,7 +57,9 @@ export default function App() {
 
   // Updated navigation handler to accept an optional second argument for the date payload
   const handleNavigate = (view, date = null) => {
-    if (date) {
+    if (view.toLowerCase() === 'board' && date) {
+      setSelectedBoardId(date);
+    } else if (date) {
       setSelectedDate(date);
     }
     setCurrentView(view.toLowerCase());
@@ -126,11 +130,9 @@ export default function App() {
           />
         );
       case 'project-overview':
-        return (
-          <Board />
-        );
+        return <ProjectOverview theme={theme} onNavigate={handleNavigate} />;
       case 'board':
-        return <Board />;
+        return <Board boardId={selectedBoardId} />;
       case 'tasks':
         return (
           <Tasks 
