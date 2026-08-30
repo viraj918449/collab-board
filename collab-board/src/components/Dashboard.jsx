@@ -1,5 +1,6 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
+import { fetchBoards, fetchTasks } from '../services/api';
 
 const isSameDay = (firstDate, secondDate) => (
   firstDate.getFullYear() === secondDate.getFullYear()
@@ -34,6 +35,12 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
   const [newTaskPriority, setNewTaskPriority] = useState('Medium');
   const [searchQuery, setSearchQuery] = useState('');
   const [today, setToday] = useState(() => new Date());
+  const [taskOverview, setTaskOverview] = useState({
+    completed: 0,
+    inProgress: 0,
+    loading: true,
+    error: false,
+  });
 
   // Keep the dashboard calendar accurate if it remains open after midnight.
   useEffect(() => {
@@ -49,6 +56,48 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
 
     scheduleRefresh();
     return () => window.clearTimeout(timerId);
+  }, []);
+
+  // Build the overview from real tasks across every board the user can access.
+  useEffect(() => {
+    let isActive = true;
+
+    const loadTaskOverview = async () => {
+      try {
+        const { data } = await fetchBoards();
+        const boards = Array.isArray(data) ? data : data.boards || [];
+        const taskResponses = await Promise.all(
+          boards.map((board) => fetchTasks(board._id || board.id))
+        );
+        const allTasks = taskResponses.flatMap(({ data: taskData }) => (
+          Array.isArray(taskData) ? taskData : taskData.tasks || []
+        ));
+        const total = allTasks.length;
+        const percentageForStatus = (status) => (
+          total === 0
+            ? 0
+            : Math.round((allTasks.filter((task) => task.status === status).length / total) * 100)
+        );
+
+        if (isActive) {
+          setTaskOverview({
+            completed: percentageForStatus('Done'),
+            inProgress: percentageForStatus('In Progress'),
+            loading: false,
+            error: false,
+          });
+        }
+      } catch {
+        if (isActive) {
+          setTaskOverview((current) => ({ ...current, loading: false, error: true }));
+        }
+      }
+    };
+
+    loadTaskOverview();
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   // Handle adding a new task
@@ -245,18 +294,21 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '160px', background: isDark ? '#0f172a' : '#f8fafc', borderRadius: '8px', border: `1px dashed ${borderColor}`, padding: '16px', boxSizing: 'border-box' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px', color: textColor }}>
                     <span>Completed</span>
-                    <span style={{ fontWeight: 'bold' }}>65%</span>
+                    <span style={{ fontWeight: 'bold' }}>{taskOverview.loading ? '...' : `${taskOverview.completed}%`}</span>
                   </div>
                   <div style={{ width: '100%', background: isDark ? '#334155' : '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
-                    <div style={{ width: '65%', background: '#2563eb', height: '100%' }}></div>
+                    <div style={{ width: `${taskOverview.completed}%`, background: '#2563eb', height: '100%', transition: 'width 200ms ease' }}></div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px', color: textColor }}>
                     <span>In Progress</span>
-                    <span style={{ fontWeight: 'bold' }}>35%</span>
+                    <span style={{ fontWeight: 'bold' }}>{taskOverview.loading ? '...' : `${taskOverview.inProgress}%`}</span>
                   </div>
                   <div style={{ width: '100%', background: isDark ? '#334155' : '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '35%', background: '#ca8a04', height: '100%' }}></div>
+                    <div style={{ width: `${taskOverview.inProgress}%`, background: '#ca8a04', height: '100%', transition: 'width 200ms ease' }}></div>
                   </div>
+                  {taskOverview.error && (
+                    <div style={{ marginTop: '10px', color: '#dc2626', fontSize: '11px' }}>Unable to load task progress.</div>
+                  )}
                 </div>
               </div>
 
