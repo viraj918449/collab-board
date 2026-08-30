@@ -8,6 +8,7 @@ const Task = require('../models/Task');
 const Board = require('../models/Board');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const { emitToBoard } = require('../realtime');
 
 // ==========================================
 // HELPER: GET CURRENT USER ID
@@ -271,6 +272,8 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
+    emitToBoard(board._id.toString(), 'task:created', savedTask);
+
     res.status(201).json(savedTask);
   } catch (err) {
     console.error('Create task error:', err);
@@ -311,6 +314,22 @@ router.put('/:id', protect, async (req, res) => {
       });
     }
 
+    const expectedVersion = Number(req.body.version);
+    const currentVersion = Number.isInteger(task.version) ? task.version : 0;
+    if (!Number.isInteger(expectedVersion) || expectedVersion < 0) {
+      return res.status(400).json({ message: 'A valid task version is required' });
+    }
+
+    if (expectedVersion !== currentVersion) {
+      const latestTask = await Task.findById(id)
+        .populate('createdBy', 'name email')
+        .populate('assignedTo', 'name email');
+      return res.status(409).json({
+        message: 'This task was changed by another user. Review the latest version and try again.',
+        latestTask,
+      });
+    }
+
     // ------------------------------------------
     // Find board
     // ------------------------------------------
@@ -336,7 +355,8 @@ router.put('/:id', protect, async (req, res) => {
       tag,
       status,
       priority,
-      assignedTo
+      assignedTo,
+      version: _version
     } = req.body;
     const previousStatus = task.status;
     const previousAssignee = task.assignedTo?.toString() || null;
@@ -412,7 +432,33 @@ router.put('/:id', protect, async (req, res) => {
       }
     }
 
-    const updatedTask = await task.save();
+    const versionFilter = expectedVersion === 0
+      ? { $or: [{ version: 0 }, { version: { $exists: false } }] }
+      : { version: expectedVersion };
+    const updatedTask = await Task.findOneAndUpdate(
+      { _id: id, ...versionFilter },
+      {
+        $set: {
+          title: task.title,
+          tag: task.tag,
+          status: task.status,
+          priority: task.priority,
+          assignedTo: task.assignedTo,
+        },
+        $inc: { version: 1 },
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedTask) {
+      const latestTask = await Task.findById(id)
+        .populate('createdBy', 'name email')
+        .populate('assignedTo', 'name email');
+      return res.status(409).json({
+        message: 'This task was changed by another user. Review the latest version and try again.',
+        latestTask,
+      });
+    }
 
     await updatedTask.populate('createdBy', 'name email');
     await updatedTask.populate('assignedTo', 'name email');
@@ -443,6 +489,12 @@ router.put('/:id', protect, async (req, res) => {
     }
 
     if (notifications.length) await Notification.insertMany(notifications);
+
+    emitToBoard(
+      board._id.toString(),
+      status !== undefined && status !== previousStatus ? 'task:moved' : 'task:updated',
+      updatedTask
+    );
 
     res.status(200).json(updatedTask);
   } catch (err) {
@@ -520,6 +572,8 @@ router.delete('/:id', protect, async (req, res) => {
     }
 
     await task.deleteOne();
+
+    emitToBoard(board._id.toString(), 'task:deleted', { _id: task._id, boardId: board._id });
 
     res.status(200).json({
       message: 'Task removed successfully'

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Column from './Column';
 import './Board.css';
 import { createBoard, createTask, deleteTask, fetchBoard, fetchBoards, fetchTasks, inviteTeamMember, removeBoardMember, updateTask } from '../services/api';
+import socket from '../services/socket';
 
 const blank = { title: '', tag: 'General', priority: 'Medium', status: 'To Do', assignedTo: '' };
 const idOf = (item) => item?._id || item?.id;
@@ -37,24 +38,67 @@ export default function Board({ boardId: initialBoardId }) {
     }).catch((err) => setError(message(err)));
   }, [boardId]);
 
+  useEffect(() => {
+    if (!boardId) return undefined;
+
+    const upsertTask = (incomingTask) => {
+      setTasks((current) => {
+        const exists = current.some((task) => idOf(task) === idOf(incomingTask));
+        return exists
+          ? current.map((task) => idOf(task) === idOf(incomingTask) ? incomingTask : task)
+          : [incomingTask, ...current];
+      });
+    };
+    const removeRemoteTask = (task) => setTasks((current) => current.filter((item) => idOf(item) !== idOf(task)));
+
+    socket.connect();
+    socket.emit('board:join', boardId);
+    socket.on('task:created', upsertTask);
+    socket.on('task:updated', upsertTask);
+    socket.on('task:moved', upsertTask);
+    socket.on('task:deleted', removeRemoteTask);
+
+    return () => {
+      socket.emit('board:leave', boardId);
+      socket.off('task:created', upsertTask);
+      socket.off('task:updated', upsertTask);
+      socket.off('task:moved', upsertTask);
+      socket.off('task:deleted', removeRemoteTask);
+    };
+  }, [boardId]);
+
   const submitTask = async (event) => {
     event.preventDefault();
     try {
       setSaving(true); setError('');
-      const payload = { ...form, boardId, assignedTo: form.assignedTo || null };
+      const existingTask = tasks.find((task) => idOf(task) === editingId);
+      const payload = {
+        ...form,
+        boardId,
+        assignedTo: form.assignedTo || null,
+        ...(editingId ? { version: existingTask?.version ?? 0 } : {}),
+      };
       const response = editingId ? await updateTask(editingId, payload) : await createTask(payload);
       const saved = response.data;
       setTasks((current) => editingId ? current.map((task) => idOf(task) === idOf(saved) ? saved : task) : [saved, ...current]);
       setForm(blank); setEditingId(null); setNotice(editingId ? 'Task updated.' : 'Task created.');
-    } catch (err) { setError(message(err)); } finally { setSaving(false); }
+    } catch (err) {
+      const latestTask = err.response?.status === 409 ? err.response.data?.latestTask : null;
+      if (latestTask) setTasks((current) => current.map((task) => idOf(task) === idOf(latestTask) ? latestTask : task));
+      setError(message(err));
+    } finally { setSaving(false); }
   };
   const editTask = (task) => {
     setEditingId(idOf(task));
     setForm({ title: task.title || '', tag: task.tag || 'General', priority: task.priority || 'Medium', status: task.status || 'To Do', assignedTo: idOf(task.assignedTo) || '' });
   };
   const changeStatus = async (task, status) => {
-    try { const { data } = await updateTask(idOf(task), { status }); setTasks((items) => items.map((item) => idOf(item) === idOf(data) ? data : item)); }
-    catch (err) { setError(message(err)); }
+    try { const { data } = await updateTask(idOf(task), { status, version: task.version ?? 0 }); setTasks((items) => items.map((item) => idOf(item) === idOf(data) ? data : item)); }
+    catch (err) {
+      const latestTask = err.response?.status === 409 ? err.response.data?.latestTask : null;
+      if (latestTask) setTasks((current) => current.map((item) => idOf(item) === idOf(latestTask) ? latestTask : item));
+      setError(message(err));
+    }
   };
   const removeTask = async (id) => {
     if (!window.confirm('Delete this task?')) return;

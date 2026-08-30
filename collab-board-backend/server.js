@@ -3,6 +3,9 @@ require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 
 const connectDB = require('./config/db');
 
@@ -11,8 +14,43 @@ const taskRoutes = require('./routes/taskRoutes');
 const boardRoutes = require('./routes/boardRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const { configureRealtime } = require('./realtime');
+const Board = require('./models/Board');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true,
+  },
+});
+
+configureRealtime(io);
+
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication required'));
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.data.userId = decoded.id || decoded._id;
+    next();
+  } catch {
+    next(new Error('Authentication required'));
+  }
+});
+
+io.on('connection', (socket) => {
+  socket.on('board:join', async (boardId) => {
+    const board = await Board.findById(boardId).select('members');
+    const isMember = board?.members.some((member) => member.toString() === socket.data.userId?.toString());
+    if (isMember) socket.join(`board:${boardId}`);
+  });
+
+  socket.on('board:leave', (boardId) => {
+    if (typeof boardId === 'string') socket.leave(`board:${boardId}`);
+  });
+});
 
 // ==================== MIDDLEWARE ====================
 
@@ -73,7 +111,7 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`API: http://localhost:${PORT}/api`);
       console.log(`Health: http://localhost:${PORT}/api/health`);
