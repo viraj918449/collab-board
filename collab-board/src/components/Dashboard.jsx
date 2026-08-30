@@ -1,5 +1,17 @@
 // src/components/Dashboard.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+const isSameDay = (firstDate, secondDate) => (
+  firstDate.getFullYear() === secondDate.getFullYear()
+  && firstDate.getMonth() === secondDate.getMonth()
+  && firstDate.getDate() === secondDate.getDate()
+);
+
+const formatScheduleDate = (date) => date.toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 
 export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   // Theme styling variables
@@ -27,6 +39,23 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('Medium');
   const [searchQuery, setSearchQuery] = useState('');
+  const [today, setToday] = useState(() => new Date());
+
+  // Keep the dashboard calendar accurate if it remains open after midnight.
+  useEffect(() => {
+    let timerId;
+    const scheduleRefresh = () => {
+      const tomorrow = new Date();
+      tomorrow.setHours(24, 0, 1, 0);
+      timerId = window.setTimeout(() => {
+        setToday(new Date());
+        scheduleRefresh();
+      }, tomorrow.getTime() - Date.now());
+    };
+
+    scheduleRefresh();
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   // Handle adding a new task
   const handleAddTask = (e) => {
@@ -65,6 +94,35 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const currentMonthName = today.toLocaleDateString('en-GB', { month: 'long' });
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const dashboardCalendarDays = [];
+
+  for (let offset = firstDayOfWeek; offset > 0; offset--) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth, 1 - offset),
+      isCurrentMonth: false,
+    });
+  }
+
+  for (let day = 1; day <= daysInCurrentMonth; day++) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth, day),
+      isCurrentMonth: true,
+    });
+  }
+
+  const totalGridCells = dashboardCalendarDays.length <= 35 ? 35 : 42;
+  for (let day = 1; dashboardCalendarDays.length < totalGridCells; day++) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth + 1, day),
+      isCurrentMonth: false,
+    });
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: bgColor, fontFamily: 'sans-serif', boxSizing: 'border-box', color: textColor }}>
@@ -268,13 +326,33 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
                 <h3 style={{ margin: 0, fontSize: '15px', color: textColor }}>Calendar</h3>
                 <button onClick={() => onNavigate('calendarpage')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
               </div>
-              <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold', color: textColor, marginBottom: '10px' }}>August 2026</div>
+              <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold', color: textColor, marginBottom: '10px' }}>{currentMonthName} {currentYear}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '12px', color: subTextColor }}>
                 <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                <span>28</span><span>29</span><span>30</span><span>31</span><span>1</span><span>2</span><span>3</span>
-                <span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-                <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
-                <span>18</span><span>19</span><span style={{ background: '#2563eb', color: 'white', borderRadius: '50%', fontWeight: 'bold' }}>20</span><span>21</span><span>22</span><span>23</span><span>24</span>
+                {dashboardCalendarDays.map(({ date, isCurrentMonth }) => {
+                  const isToday = isSameDay(date, today);
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => onNavigate('schedule', formatScheduleDate(date))}
+                      aria-label={formatScheduleDate(date)}
+                      style={{
+                        background: isToday ? '#2563eb' : 'transparent',
+                        border: 'none',
+                        borderRadius: '50%',
+                        color: isToday ? 'white' : (isCurrentMonth ? textColor : subTextColor),
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontWeight: isToday ? 'bold' : 'normal',
+                        opacity: isCurrentMonth ? 1 : 0.5,
+                        padding: '2px 0',
+                      }}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
