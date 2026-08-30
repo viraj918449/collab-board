@@ -188,17 +188,6 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
                     <div style={{ fontSize: '11px', color: subTextColor }}>Connected</div>
                   </div>
                 </div>
-                <button style={{ padding: '6px 12px', background: cardBg, border: `1px solid ${borderColor}`, borderRadius: '6px', fontSize: '12px', fontWeight: '500', color: textColor, cursor: 'pointer' }}>
-                  Change Gmail
-                </button>
-              </div>
-
-              <div style={{ background: isDark ? '#1e3a8a' : '#eff6ff', padding: '12px', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <span style={{ color: '#2563eb' }}>ℹ️</span>
-                <div style={{ fontSize: '11px', color: textColor, lineHeight: '1.4' }}>
-                  <strong>Your account is connected with Google.</strong><br/>
-                  You can change your connected Google account using the option above.
-                </div>
               </div>
             </div>
 
@@ -294,12 +283,6 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
                 <div style={{ fontSize: '11px', color: subTextColor }}>Add an extra layer of security to your account.</div>
               </div>
             </div>
-            <button 
-              onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-              style={{ padding: '6px 16px', background: twoFactorEnabled ? '#16a34a' : cardBg, color: twoFactorEnabled ? 'white' : textColor, border: `1px solid ${borderColor}`, borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-            >
-              {twoFactorEnabled ? 'Enabled' : 'Enable'}
-            </button>
           </div>
 
         </div>
