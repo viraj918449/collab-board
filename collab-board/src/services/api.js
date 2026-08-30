@@ -60,6 +60,9 @@ export const loginUser = async (userData) => {
   return API.post('/auth/login', userData);
 };
 
+export const requestPasswordReset = async (email) => API.post('/auth/forgot-password', { email });
+export const resetPassword = async (data) => API.post('/auth/reset-password', data);
+
 export const getCurrentUser = async () => {
   return API.get('/auth/me');
 };

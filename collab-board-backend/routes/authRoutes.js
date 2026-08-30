@@ -7,6 +7,8 @@ const User = require('../models/User');
 // --- PUBLIC ROUTES ---
 router.post('/register', authController.register);
 router.post('/login', authController.login);
+router.post('/forgot-password', authController.requestPasswordReset);
+router.post('/reset-password', authController.resetPassword);
 
 // --- PROTECTED ROUTE ---
 router.get('/me', protect, async (req, res) => {

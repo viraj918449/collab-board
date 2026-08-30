@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { sendPasswordResetPin } = require('../services/mailer');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -124,5 +126,66 @@ exports.login = async (req, res) => {
     res.status(500).json({
       error: err.message
     });
+  }
+};
+
+// Send a four-digit, time-limited password reset PIN.
+exports.requestPasswordReset = async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const user = await User.findOne({ email }).select('+resetPinHash +resetPinExpiresAt +resetPinAttempts');
+    // Keep this response identical for unknown accounts to avoid revealing registered emails.
+    if (!user) return res.json({ message: 'If an account exists for this email, a PIN has been sent.' });
+
+    const pin = crypto.randomInt(1000, 10000).toString();
+    user.resetPinHash = await bcrypt.hash(pin, 10);
+    user.resetPinExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    user.resetPinAttempts = 0;
+    await user.save();
+
+    await sendPasswordResetPin({ email: user.email, pin });
+    res.json({ message: 'If an account exists for this email, a PIN has been sent.' });
+  } catch (err) {
+    console.error('Password reset request error:', err);
+    res.status(503).json({ error: 'Unable to send reset PIN. Please try again later.' });
+  }
+};
+
+// Verify a reset PIN and update the password.
+exports.resetPassword = async (req, res) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const pin = String(req.body.pin || '').trim();
+    const newPassword = String(req.body.newPassword || '');
+    if (!email || !/^\d{4}$/.test(pin) || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Enter a valid 4-digit PIN and a password with at least 6 characters.' });
+    }
+
+    const user = await User.findOne({ email }).select('+resetPinHash +resetPinExpiresAt +resetPinAttempts');
+    if (!user || !user.resetPinHash || !user.resetPinExpiresAt || user.resetPinExpiresAt < new Date()) {
+      return res.status(400).json({ error: 'This PIN is invalid or has expired. Request a new PIN.' });
+    }
+    if (user.resetPinAttempts >= 5) {
+      return res.status(429).json({ error: 'Too many incorrect PIN attempts. Request a new PIN.' });
+    }
+
+    const isPinValid = await bcrypt.compare(pin, user.resetPinHash);
+    if (!isPinValid) {
+      user.resetPinAttempts += 1;
+      await user.save();
+      return res.status(400).json({ error: 'Incorrect PIN. Please try again.' });
+    }
+
+    user.password = newPassword;
+    user.resetPinHash = null;
+    user.resetPinExpiresAt = null;
+    user.resetPinAttempts = 0;
+    await user.save();
+    res.json({ message: 'Password updated successfully. You can now sign in.' });
+  } catch (err) {
+    console.error('Password reset error:', err);
+    res.status(500).json({ error: 'Unable to reset password. Please try again.' });
   }
 };

@@ -61,6 +61,24 @@ const userSchema = new mongoose.Schema(
       default: '',
       trim: true,
     },
+
+    resetPinHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    resetPinExpiresAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+
+    resetPinAttempts: {
+      type: Number,
+      default: 0,
+      select: false,
+    },
   },
   {
     timestamps: true,
