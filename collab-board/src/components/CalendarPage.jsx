@@ -1,5 +1,13 @@
 // src/components/CalendarPage.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+const startOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1);
+
+const isSameDay = (firstDate, secondDate) => (
+  firstDate.getFullYear() === secondDate.getFullYear()
+  && firstDate.getMonth() === secondDate.getMonth()
+  && firstDate.getDate() === secondDate.getDate()
+);
 
 export default function CalendarPage({ onLogout, onNavigate, theme = 'light' }) {
   // Theme styling variables
@@ -10,8 +18,30 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light' }) 
   const subTextColor = isDark ? '#94a3b8' : '#64748b';
   const borderColor = isDark ? '#334155' : '#e2e8f0';
 
-  // State for current month and year navigation (Default to August 2026)
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 7, 1));
+  // Start with the current month instead of a fixed calendar date.
+  const [currentDate, setCurrentDate] = useState(() => startOfMonth(new Date()));
+  const [today, setToday] = useState(() => new Date());
+
+  // Refresh the current-day marker when the date changes while the page is open.
+  useEffect(() => {
+    const refreshToday = () => setToday(new Date());
+    const millisecondsUntilTomorrow = () => {
+      const tomorrow = new Date();
+      tomorrow.setHours(24, 0, 1, 0);
+      return tomorrow.getTime() - Date.now();
+    };
+
+    let timerId;
+    const scheduleRefresh = () => {
+      timerId = window.setTimeout(() => {
+        refreshToday();
+        scheduleRefresh();
+      }, millisecondsUntilTomorrow());
+    };
+
+    scheduleRefresh();
+    return () => window.clearTimeout(timerId);
+  }, []);
 
   // Filters state
   const [filters, setFilters] = useState({
@@ -35,7 +65,9 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light' }) 
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date(2026, 7, 1)); // Reset to August 2026
+    const now = new Date();
+    setToday(now);
+    setCurrentDate(startOfMonth(now));
   };
 
   // Helper to handle clicking a date cell and navigating to schedule with that date
@@ -71,8 +103,8 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light' }) 
 
   // 2. Current month days
   for (let day = 1; day <= daysInCurrentMonth; day++) {
-    // Highlight for August 20, 2026
-    const isAug20 = currentYear === 2026 && currentDate.getMonth() === 7 && day === 20;
+    const cellDate = new Date(currentYear, currentDate.getMonth(), day);
+    const isToday = isSameDay(cellDate, today);
 
     calendarCells.push(
       <div 
@@ -80,7 +112,7 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light' }) 
         onClick={() => handleDateClick(day, currentMonthName, currentYear)} 
         style={{ padding: '4px', color: textColor, cursor: 'pointer', borderRadius: '6px' }}
       >
-        {isAug20 ? (
+        {isToday ? (
           <>
             <div style={{ width: '24px', height: '24px', background: '#2563eb', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', marginBottom: '4px' }}>{day}</div>
             <div style={{ fontSize: '10px', color: '#60a5fa', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>• Team Standup</div>

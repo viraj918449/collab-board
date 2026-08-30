@@ -43,6 +43,24 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    bio: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    location: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+
+    website: {
+      type: String,
+      default: '',
+      trim: true,
+    },
   },
   {
     timestamps: true,

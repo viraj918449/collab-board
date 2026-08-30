@@ -1,7 +1,7 @@
 // src/components/NewTask.jsx
 import React, { useState } from 'react';
 
-export default function NewTask({ onLogout, onNavigate, theme = 'light' }) {
+export default function NewTask({ onLogout, onNavigate, onCreateTask, theme = 'light' }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -18,21 +18,27 @@ export default function NewTask({ onLogout, onNavigate, theme = 'light' }) {
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('Medium');
   const [tags, setTags] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const newTaskData = {
-      taskTitle,
+    if (!taskTitle.trim()) {
+      setError('Task title is required.');
+      return;
+    }
+
+    onCreateTask?.({
+      id: `local-${Date.now()}`,
+      title: taskTitle.trim(),
       project,
       description,
       assignee,
       dueDate,
       priority,
-      tags
-    };
-    console.log('Created Task:', newTaskData);
-    // Add your task creation logic or API call here, then navigate back //
-    onNavigate('tasks');
+      tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+      status: 'Pending',
+    });
+    onNavigate('dashboard');
   };
 
   return (
@@ -92,6 +98,7 @@ export default function NewTask({ onLogout, onNavigate, theme = 'light' }) {
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} style={{ background: cardBg, padding: '32px', borderRadius: '12px', border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px' }}>
+          {error && <p style={{ margin: 0, color: '#dc2626', fontSize: '13px' }}>{error}</p>}
           
           {/* Task Title */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -100,7 +107,8 @@ export default function NewTask({ onLogout, onNavigate, theme = 'light' }) {
               type="text" 
               placeholder="e.g. Design homepage for website"
               value={taskTitle}
-              onChange={(e) => setTaskTitle(e.target.value)}
+              onChange={(e) => { setTaskTitle(e.target.value); setError(''); }}
+              required
               style={{ padding: '10px 14px', borderRadius: '8px', border: `1px solid ${borderColor}`, fontSize: '13px', outline: 'none', background: inputBg, color: textColor }}
             />
           </div>

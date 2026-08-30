@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
@@ -15,12 +15,43 @@ import Profile from './components/Profile';
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
 import Board from './components/Board';
+import NewTask from './components/NewTask';
 import './App.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState(() => localStorage.getItem('token') ? 'dashboard' : 'login');
-  const [selectedDate, setSelectedDate] = useState('20 August 2026');
+  const formatDate = (date = new Date()) => date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const [selectedDate, setSelectedDate] = useState(() => formatDate());
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
+  const [dashboardTasks, setDashboardTasks] = useState(() => {
+    try {
+      const savedTasks = JSON.parse(localStorage.getItem('dashboardTasks') || 'null');
+      if (Array.isArray(savedTasks)) return savedTasks;
+    } catch {
+      localStorage.removeItem('dashboardTasks');
+    }
+
+    return [
+      { id: 1, title: 'User Roles & Permissions', priority: 'High', status: 'Pending' },
+      { id: 2, title: 'Responsive Dashboard', priority: 'Medium', status: 'Pending' },
+      { id: 3, title: 'Email Notifications', priority: 'Medium', status: 'Pending' },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboardTasks', JSON.stringify(dashboardTasks));
+  }, [dashboardTasks]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('collabToken');
+    localStorage.removeItem('collabUser');
+    setCurrentView('login');
+  };
 
   // Updated navigation handler to accept an optional second argument for the date payload
   const handleNavigate = (view, date = null) => {
@@ -72,7 +103,7 @@ export default function App() {
         return (
           <Profile 
             theme={theme} 
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );  
@@ -80,7 +111,7 @@ export default function App() {
         return (                      
           <Team
             theme={theme}
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate} 
           />
         );
@@ -88,8 +119,10 @@ export default function App() {
         return (
           <Dashboard 
             theme={theme} 
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
+            tasks={dashboardTasks}
+            onTasksChange={setDashboardTasks}
           />
         );
       case 'project-overview':
@@ -102,7 +135,7 @@ export default function App() {
         return (
           <Tasks 
             theme={theme}
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -110,17 +143,24 @@ export default function App() {
         return (
           <Notifications 
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
       case 'newtask':
-        return <Board />;
+        return (
+          <NewTask
+            theme={theme}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            onCreateTask={(task) => setDashboardTasks((currentTasks) => [task, ...currentTasks])}
+          />
+        );
       case 'schedule':
         return (
           <Schedule 
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
             selectedDate={selectedDate}
           />
@@ -129,7 +169,7 @@ export default function App() {
         return (
           <CalendarPage
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -138,7 +178,7 @@ export default function App() {
           <Setting
             theme={theme}       
             setTheme={setTheme} 
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -147,7 +187,7 @@ export default function App() {
           <Upcomingtask
             theme={theme}       
             setTheme={setTheme} 
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -155,7 +195,7 @@ export default function App() {
         return (
           <ActivityHistory
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
       );

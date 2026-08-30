@@ -25,7 +25,8 @@ app.use(
 );
 
 // Parse JSON requests
-app.use(express.json());
+// Profile avatars are stored as data URLs, which can exceed Express's 100 KB default.
+app.use(express.json({ limit: '5mb' }));
 
 // ==================== ROUTES ====================
 

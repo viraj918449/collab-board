@@ -1,5 +1,6 @@
 // src/components/Profile.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { getCurrentUser, updateCurrentUser } from '../services/api';
 
 export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   // Theme styling variables
@@ -13,18 +14,57 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const inputBg = isDark ? '#0f172a' : '#ffffff';
 
   // Form State
-  const [fullName, setFullName] = useState('Upeksha Madumali');
-  const [email, setEmail] = useState('upeksha@gmail.com');
-  const [bio, setBio] = useState('Product designer passionate about creating beautiful and functional user experiences.');
-  const [location, setLocation] = useState('Colombo, Sri Lanka');
-  const [website, setWebsite] = useState('https://upeksha.ui.design');
-  const [profileImage, setProfileImage] = useState(
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
-   );
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [website, setWebsite] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const fallbackAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200';
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    const applyProfile = (data) => {
+      setFullName(data.name || ''); setEmail(data.email || ''); setBio(data.bio || '');
+      setLocation(data.location || ''); setWebsite(data.website || ''); setProfileImage(data.avatar || '');
+    };
+
+    try {
+      const cachedUser = JSON.parse(localStorage.getItem('collabUser') || 'null');
+      if (cachedUser) applyProfile(cachedUser);
+    } catch {
+      localStorage.removeItem('collabUser');
+    }
+
+    getCurrentUser()
+      .then(({ data }) => {
+        applyProfile(data);
+        localStorage.setItem('collabUser', JSON.stringify(data));
+      })
+      .catch((err) => {
+        if (err.response?.status === 401 || err.response?.status === 404) {
+          // The login response is already displayed from local storage above.
+          // Do not replace it with an error or navigate away if refresh fails.
+          return;
+        }
+        // Keep the saved profile visible during a temporary network failure.
+        console.error('Unable to refresh profile:', err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert('Profile update successfully!');
+    try {
+      setSaving(true); setMessage('');
+      const { data } = await updateCurrentUser({ name: fullName, email, bio, location, website, avatar: profileImage });
+      localStorage.setItem('collabUser', JSON.stringify(data));
+      setMessage('Profile updated successfully.');
+    } catch (err) {
+      setMessage(err.response?.data?.message || err.response?.data?.error || 'Unable to update your profile.');
+    } finally { setSaving(false); }
   };
 
 
@@ -32,7 +72,17 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const file = e.target.files[0];
 
   if (file) {
-    setProfileImage(URL.createObjectURL(file));
+    if (!file.type.startsWith('image/')) {
+      setMessage('Please select an image file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage('Please select an image smaller than 2 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setProfileImage(reader.result);
+    reader.readAsDataURL(file);
   }
   };
 
@@ -115,6 +165,8 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
           <h1 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: 'bold', color: textColor }}>Profile</h1>
           <p style={{ margin: 0, fontSize: '13px', color: subTextColor }}>Manage your personal information and preferences.</p>
         </div>
+        {message && <p style={{ color: message.includes('successfully') ? '#16a34a' : '#dc2626', fontSize: '13px' }}>{message}</p>}
+        {loading && <p style={{ color: subTextColor, fontSize: '13px' }}>Loading profile...</p>}
 
         {/* Main Profile Card Container */}
         <div style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: '12px', display: 'flex', padding: '40px', minHeight: '500px' }}>
@@ -130,7 +182,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
           }}>
             
             <img 
-              src={profileImage}
+              src={profileImage || fallbackAvatar}
               alt="Profile Avatar"
               style={{
                 width: '120px',
@@ -249,9 +301,10 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: '20px' }}>
                 <button 
                   type="submit" 
+                  disabled={loading || saving}
                   style={{ padding: '12px 24px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '500', fontSize: '14px', cursor: 'pointer' }}
                 >
-                  Save Changes
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
 
