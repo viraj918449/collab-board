@@ -278,11 +278,15 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
               + New Task
             </button>
 
-            <div 
+            <div
               onClick={() => onNavigate('notifications')}
-              style={{ fontSize: '18px', cursor: 'pointer', padding: '6px', borderRadius: '50%', background: cardBg, border: `1px solid ${borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title="View Notifications"
+              style={{ position: 'relative', fontSize: '18px', cursor: 'pointer', padding: '6px', borderRadius: '50%', background: cardBg, border: `1px solid ${borderColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="3 unread notifications"
+              aria-label="3 unread notifications"
             >
+              <span style={{ position: 'absolute', top: '-7px', right: '-7px', minWidth: '17px', height: '17px', padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '999px', background: '#dc2626', color: 'white', fontSize: '10px', fontWeight: '700', lineHeight: 1, border: `2px solid ${bgColor}`, boxSizing: 'border-box' }}>
+                3
+              </span>
               🔔
             </div>
 
