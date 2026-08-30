@@ -10,7 +10,7 @@ const relativeTime = (date) => {
   return `${Math.floor(seconds / 86400)}d ago`;
 };
 
-export default function Notifications({ onLogout, onNavigate, theme = 'light' }) {
+export default function Notifications({ onLogout, onNavigate, localNotifications = [], onLocalNotificationsChange, theme = 'light' }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -20,7 +20,7 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
   const borderColor = isDark ? '#334155' : '#ffffff';
 
   const [activeTab, setActiveTab] = useState('All');
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(localNotifications);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -29,9 +29,10 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
       setLoading(true);
       setError('');
       const response = await fetchNotifications();
-      setNotifications(response.data);
+      setNotifications([...localNotifications, ...response.data]);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to load notifications.');
+      // Notifications created from the dashboard remain available offline.
+      setNotifications(localNotifications);
     } finally {
       setLoading(false);
     }
@@ -39,14 +40,18 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
 
   useEffect(() => { loadNotifications(); }, []);
 
+  const isLocalNotification = (id) => String(id).startsWith('local-');
+
   const filteredNotifications = notifications.filter((notification) => (
     activeTab === 'Unread' ? !notification.read : activeTab === 'Mentions' ? notification.type === 'mention' : true
   ));
 
   const markAllAsRead = async () => {
+    const unreadServerNotifications = notifications.some((item) => !item.read && !isLocalNotification(item._id));
     try {
-      await markAllNotificationsAsRead();
+      if (unreadServerNotifications) await markAllNotificationsAsRead();
       setNotifications((items) => items.map((item) => ({ ...item, read: true })));
+      onLocalNotificationsChange?.((items) => items.map((item) => ({ ...item, read: true })));
     } catch (requestError) {
       setError(requestError.response?.data?.message || 'Unable to update notifications.');
     }
@@ -54,6 +59,11 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
 
   const markAsRead = async (id) => {
     if (notifications.find((item) => item._id === id)?.read) return;
+    if (isLocalNotification(id)) {
+      setNotifications((items) => items.map((item) => item._id === id ? { ...item, read: true } : item));
+      onLocalNotificationsChange?.((items) => items.map((item) => item._id === id ? { ...item, read: true } : item));
+      return;
+    }
     try {
       await markNotificationAsRead(id);
       setNotifications((items) => items.map((item) => item._id === id ? { ...item, read: true } : item));
