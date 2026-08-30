@@ -1,7 +1,7 @@
 // src/components/Setting.jsx
 import React, { useState } from 'react';
 
-export default function Setting({ onLogout, onNavigate, theme = 'light', setTheme }) {
+export default function Setting({ onLogout, onNavigate, theme = 'light', setTheme, selectedDate = '20 August 2026' }) {
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
   const cardBg = isDark ? '#1e293b' : 'white';
@@ -83,8 +83,24 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
           </div>
           
           {/* Date Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: cardBg, border: `1px solid ${borderColor}`, padding: '8px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500', color: textColor, boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-            <span>20 August 2026</span>
+          <div
+            onClick={() => onNavigate('calendarpage')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: cardBg,
+              border: `1px solid ${borderColor}`,
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '13px',
+              fontWeight: '500',
+              color: textColor,
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              cursor: 'pointer'
+            }}
+          >
+            <span>{selectedDate}</span>
             <span>📅</span>
           </div>
         </div>

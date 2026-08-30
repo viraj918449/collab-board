@@ -136,8 +136,9 @@ export default function App() {
       case 'setting':
         return (
           <Setting
-            theme={theme}       
-            setTheme={setTheme} 
+            theme={theme}
+            setTheme={setTheme}
+            selectedDate={selectedDate}
             onLogout={() => setCurrentView('login')}
             onNavigate={handleNavigate}
           />
