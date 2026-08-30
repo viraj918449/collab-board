@@ -1,6 +1,6 @@
 // src/App.jsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
@@ -15,6 +15,7 @@ import Profile from './components/Profile';
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
 import Board from './components/Board';
+import NewTask from './components/NewTask';
 import './App.css';
 
 export default function App() {
@@ -26,6 +27,24 @@ export default function App() {
   });
   const [selectedDate, setSelectedDate] = useState(() => formatDate());
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
+  const [dashboardTasks, setDashboardTasks] = useState(() => {
+    try {
+      const savedTasks = JSON.parse(localStorage.getItem('dashboardTasks') || 'null');
+      if (Array.isArray(savedTasks)) return savedTasks;
+    } catch {
+      localStorage.removeItem('dashboardTasks');
+    }
+
+    return [
+      { id: 1, title: 'User Roles & Permissions', priority: 'High', status: 'Pending' },
+      { id: 2, title: 'Responsive Dashboard', priority: 'Medium', status: 'Pending' },
+      { id: 3, title: 'Email Notifications', priority: 'Medium', status: 'Pending' },
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('dashboardTasks', JSON.stringify(dashboardTasks));
+  }, [dashboardTasks]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -102,6 +121,8 @@ export default function App() {
             theme={theme} 
             onLogout={handleLogout}
             onNavigate={handleNavigate}
+            tasks={dashboardTasks}
+            onTasksChange={setDashboardTasks}
           />
         );
       case 'project-overview':
@@ -127,7 +148,14 @@ export default function App() {
           />
         );
       case 'newtask':
-        return <Board />;
+        return (
+          <NewTask
+            theme={theme}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
+            onCreateTask={(task) => setDashboardTasks((currentTasks) => [task, ...currentTasks])}
+          />
+        );
       case 'schedule':
         return (
           <Schedule 

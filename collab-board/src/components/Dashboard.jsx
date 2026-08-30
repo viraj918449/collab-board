@@ -13,7 +13,7 @@ const formatScheduleDate = (date) => date.toLocaleDateString('en-GB', {
   year: 'numeric',
 });
 
-export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
+export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks = [], onTasksChange }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -24,12 +24,6 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const inputBg = isDark ? '#0f172a' : '#fff';
 
   // Local state for interactive features
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'User Roles & Permissions', priority: 'High', status: 'Pending' },
-    { id: 2, title: 'Responsive Dashboard', priority: 'Medium', status: 'Pending' },
-    { id: 3, title: 'Email Notifications', priority: 'Medium', status: 'Pending' },
-  ]);
-
   const [activities, setActivities] = useState([
     { id: 1, text: "🚀 Nimali moved 'Design Login Page' to In Progress", time: '2m ago' },
     { id: 2, text: "⚡ Hasidu completed 'API Integration'", time: '10m ago' },
@@ -69,7 +63,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
       status: 'Pending',
     };
 
-    setTasks([newTask, ...tasks]);
+    onTasksChange?.((currentTasks) => [newTask, ...currentTasks]);
     setActivities([
       { id: Date.now(), text: `✨ You added a new task '${newTaskTitle}'`, time: 'Just now' },
       ...activities
@@ -81,7 +75,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
 
   // Toggle task completion
   const toggleTaskStatus = (id) => {
-    setTasks(tasks.map(task => {
+    onTasksChange?.((currentTasks) => currentTasks.map(task => {
       if (task.id === id) {
         const newStatus = task.status === 'Pending' ? 'Completed' : 'Pending';
         return { ...task, status: newStatus };
