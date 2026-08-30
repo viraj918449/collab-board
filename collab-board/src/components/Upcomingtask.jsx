@@ -15,7 +15,7 @@ export default function UpcomingTask({ onNavigate, onLogout, theme = 'light', ta
     const query = searchText.trim().toLowerCase();
 
     return (Array.isArray(tasks) ? tasks : [])
-      .filter((task) => ['To Do', 'In Progress'].includes(task.status || 'To Do'))
+      .filter((task) => ['Pending', 'To Do', 'In Progress'].includes(task.status || 'Pending'))
       .filter((task) => {
         if (priorityFilter !== 'All' && (task.priority || 'Medium') !== priorityFilter) {
           return false;
@@ -38,7 +38,7 @@ export default function UpcomingTask({ onNavigate, onLogout, theme = 'light', ta
           type,
         };
       });
-  }, [tasks]);
+  }, [tasks, searchText, priorityFilter]);
 
   const getIconStyles = (type) => {
     switch (type) {

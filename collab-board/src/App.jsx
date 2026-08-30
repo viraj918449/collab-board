@@ -241,7 +241,7 @@ export default function App() {
             setTheme={setTheme}
             onLogout={handleLogout}
             onNavigate={handleNavigate}
-            tasks={projectTasks}
+            tasks={dashboardTasks}
           />
         );
       case 'activity-history':

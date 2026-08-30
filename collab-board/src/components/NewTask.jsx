@@ -37,6 +37,7 @@ export default function NewTask({ onLogout, onNavigate, onCreateTask, theme = 'l
       priority,
       tags: tags.split(',').map((tag) => tag.trim()).filter(Boolean),
       status: 'Pending',
+      createdAt: new Date().toISOString(),
     });
     onNavigate('dashboard');
   };
