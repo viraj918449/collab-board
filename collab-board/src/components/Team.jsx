@@ -552,6 +552,7 @@ export default function Team({
           SIDEBAR
       ====================================================== */}
       <aside
+        data-legacy-sidebar
         style={{
           width: '240px',
           minWidth: '240px',

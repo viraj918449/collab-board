@@ -17,6 +17,7 @@ import Team from './components/Team';
 import Board from './components/Board';
 import ProjectOverview from './components/ProjectOverview';
 import NewTask from './components/NewTask';
+import Sidebar from './components/Sidebar';
 import './App.css';
 
 export default function App() {
@@ -248,9 +249,16 @@ export default function App() {
     }
   };
 
+  const isAuthView = ['login', 'register', 'forgot'].includes(currentView.toLowerCase());
+
   return (
     <div className="app-root">
-      {renderCurrentView()}
+      {isAuthView ? renderCurrentView() : (
+        <div className={`app-shell app-shell--${theme}`}>
+          <Sidebar currentView={currentView.toLowerCase()} theme={theme} onNavigate={handleNavigate} onLogout={handleLogout} />
+          <div className="app-shell__page">{renderCurrentView()}</div>
+        </div>
+      )}
     </div>
   );
 }

@@ -41,3 +41,10 @@
   flex-direction: column;
   justify-content: center;
 }
+
+.app-shell { display: flex; min-height: 100vh; width: 100%; }
+.app-shell--light { background: #f8fafc; }
+.app-shell--dark { background: #0f172a; }
+.app-shell__page { flex: 1; min-width: 0; }
+/* Local sidebars are retained in old pages but hidden inside the shared shell. */
+.app-shell [data-legacy-sidebar], .app-shell .project-board__sidebar { display: none !important; }
