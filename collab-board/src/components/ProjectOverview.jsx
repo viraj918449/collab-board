@@ -18,6 +18,7 @@ export default function ProjectOverview({ theme = 'light', onNavigate, tasks: sh
   const [notice, setNotice] = useState('');
   const [taskForm, setTaskForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [editingVersion, setEditingVersion] = useState(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [projectCreateOpen, setProjectCreateOpen] = useState(false);
@@ -66,18 +67,31 @@ export default function ProjectOverview({ theme = 'light', onNavigate, tasks: sh
   }, [onTasksChange]);
   const openTaskForm = (status = 'To Do', task = null) => {
     setEditingId(task ? idOf(task) : null);
+    setEditingVersion(task?.version ?? 0);
     setTaskForm(task ? { title: task.title || '', tag: task.tag || 'General', priority: task.priority || 'Medium', assignedTo: idOf(task.assignedTo) || '', boardId, status: task.status || status } : newTask(boardId, status));
   };
   const saveTask = async (event) => {
     event.preventDefault(); if (!taskForm.title.trim()) return;
     setSaving(true); setError('');
     try {
-      const payload = { ...taskForm, title: taskForm.title.trim(), assignedTo: taskForm.assignedTo || null };
+      const payload = {
+        ...taskForm,
+        title: taskForm.title.trim(),
+        assignedTo: taskForm.assignedTo || null,
+        ...(editingId ? { version: editingVersion ?? 0 } : {}),
+      };
       const { data } = editingId ? await updateTask(editingId, payload) : await createTask(payload);
       updateTasks((current) => editingId ? current.map((task) => idOf(task) === idOf(data) ? data : task) : [data, ...current]);
       if (!editingId) onTaskCreated?.(data);
-      setTaskForm(null); setEditingId(null); setNotice(editingId ? 'Task updated.' : 'Task added.');
-    } catch (requestError) { setError(errorText(requestError)); }
+      setTaskForm(null); setEditingId(null); setEditingVersion(null); setNotice(editingId ? 'Task updated.' : 'Task added.');
+    } catch (requestError) {
+      const latestTask = requestError.response?.data?.latestTask;
+      if (latestTask) {
+        updateTasks((current) => current.map((task) => idOf(task) === idOf(latestTask) ? latestTask : task));
+        setEditingVersion(latestTask.version ?? 0);
+      }
+      setError(errorText(requestError));
+    }
     finally { setSaving(false); }
   };
   const removeTask = async (task) => {

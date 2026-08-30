@@ -1,5 +1,5 @@
 // src/components/CalendarPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const startOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1);
 
@@ -9,7 +9,7 @@ const isSameDay = (firstDate, secondDate) => (
   && firstDate.getDate() === secondDate.getDate()
 );
 
-export default function CalendarPage({ onLogout, onNavigate, theme = 'light', selectedDate }) {
+export default function CalendarPage({ onLogout, onNavigate, theme = 'light', selectedDate, scheduleItems = [] }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -88,6 +88,11 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light', se
   const daysInCurrentMonth = getDaysInMonth(currentYear, currentDate.getMonth());
   const firstDayOfWeek = getFirstDayOfWeek(currentYear, currentDate.getMonth());
   const selectedCalendarDate = selectedDate ? new Date(selectedDate) : null;
+  const dateKey = (date) => [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+  const todayScheduleItems = useMemo(() => scheduleItems
+    .filter((item) => item.date === dateKey(today))
+    .sort((first, second) => first.time.localeCompare(second.time)), [scheduleItems, today]);
+  const formatTime = (time) => new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   
   // Previous month trailing days calculation
   const prevMonthDays = getDaysInMonth(currentYear, currentDate.getMonth() - 1);
@@ -224,10 +229,13 @@ export default function CalendarPage({ onLogout, onNavigate, theme = 'light', se
           {/* Right Column: Upcoming Events & Filters */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* Upcoming Events Box */}
+            {/* Today's Schedule */}
             <div style={{ background: cardBg, padding: '20px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', color: textColor }}>Upcoming Events</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}><h3 style={{ margin: 0, fontSize: '15px', color: textColor }}>Today's Schedule</h3><button type="button" onClick={() => onNavigate('schedule', `${today.getDate()} ${currentMonthName} ${today.getFullYear()}`)} style={{ border: 0, background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>View all</button></div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
+                {todayScheduleItems.length === 0 ? <p style={{ margin: 0, color: subTextColor }}>No schedules for today.</p> : todayScheduleItems.map((item) => <button key={item.id} type="button" onClick={() => onNavigate('schedule', `${today.getDate()} ${currentMonthName} ${today.getFullYear()}`)} style={{ display: 'grid', gridTemplateColumns: '70px 1fr', gap: '10px', padding: '9px 0', textAlign: 'left', color: textColor, background: 'transparent', border: 0, borderBottom: `1px solid ${borderColor}`, cursor: 'pointer' }}><strong style={{ fontSize: '12px' }}>{formatTime(item.time)}</strong><span><strong style={{ display: 'block', fontSize: '13px' }}>{item.title}</strong><small style={{ color: subTextColor }}>{item.details || item.type}</small></span></button>)}
+              </div>
+              <div style={{ display: 'none', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
                 
                 <div onClick={() => onNavigate('schedule', '20 August 2026')} style={{ cursor: 'pointer' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '600', color: textColor }}>

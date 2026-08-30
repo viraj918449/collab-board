@@ -238,6 +238,7 @@ export default function App() {
             onLogout={handleLogout}
             onNavigate={handleNavigate}
             selectedDate={selectedDate}
+            scheduleItems={scheduleItems}
           />
         );
       case 'setting':
