@@ -163,6 +163,8 @@ export const markAllNotificationsAsRead = async () => {
   return API.patch('/notifications/read-all');
 };
 
+export const fetchRecentActivities = async (limit = 5) => API.get('/activities', { params: { limit } });
+
 // ==========================================
 // DEFAULT EXPORT
 // ==========================================

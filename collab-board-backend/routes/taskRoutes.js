@@ -8,6 +8,7 @@ const Task = require('../models/Task');
 const Board = require('../models/Board');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Activity = require('../models/Activity');
 const { emitToBoard } = require('../realtime');
 
 // ==========================================
@@ -273,6 +274,7 @@ router.post('/', protect, async (req, res) => {
     }
 
     emitToBoard(board._id.toString(), 'task:created', savedTask);
+    await Activity.create({ actor: userId, board: board._id, task: savedTask._id, type: 'task_created', message: `created task “${savedTask.title}”` });
 
     res.status(201).json(savedTask);
   } catch (err) {
@@ -495,6 +497,14 @@ router.put('/:id', protect, async (req, res) => {
       status !== undefined && status !== previousStatus ? 'task:moved' : 'task:updated',
       updatedTask
     );
+    const wasMoved = status !== undefined && status !== previousStatus;
+    await Activity.create({
+      actor: userId,
+      board: board._id,
+      task: updatedTask._id,
+      type: wasMoved ? 'task_moved' : 'task_updated',
+      message: wasMoved ? `moved task “${updatedTask.title}” to ${updatedTask.status}` : `updated task “${updatedTask.title}”`,
+    });
 
     res.status(200).json(updatedTask);
   } catch (err) {
@@ -574,6 +584,7 @@ router.delete('/:id', protect, async (req, res) => {
     await task.deleteOne();
 
     emitToBoard(board._id.toString(), 'task:deleted', { _id: task._id, boardId: board._id });
+    await Activity.create({ actor: userId, board: board._id, task: task._id, type: 'task_deleted', message: `deleted task “${task.title}”` });
 
     res.status(200).json({
       message: 'Task removed successfully'
