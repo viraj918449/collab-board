@@ -1,7 +1,20 @@
 // src/components/Dashboard.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchBoards, fetchTasks } from '../services/api';
 
-export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
+const isSameDay = (firstDate, secondDate) => (
+  firstDate.getFullYear() === secondDate.getFullYear()
+  && firstDate.getMonth() === secondDate.getMonth()
+  && firstDate.getDate() === secondDate.getDate()
+);
+
+const formatScheduleDate = (date) => date.toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks = [], onTasksChange }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -12,12 +25,6 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const inputBg = isDark ? '#0f172a' : '#fff';
 
   // Local state for interactive features
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'User Roles & Permissions', priority: 'High', status: 'Pending' },
-    { id: 2, title: 'Responsive Dashboard', priority: 'Medium', status: 'Pending' },
-    { id: 3, title: 'Email Notifications', priority: 'Medium', status: 'Pending' },
-  ]);
-
   const [activities, setActivities] = useState([
     { id: 1, text: "🚀 Nimali moved 'Design Login Page' to In Progress", time: '2m ago' },
     { id: 2, text: "⚡ Hasidu completed 'API Integration'", time: '10m ago' },
@@ -27,6 +34,71 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState('Medium');
   const [searchQuery, setSearchQuery] = useState('');
+  const [today, setToday] = useState(() => new Date());
+  const [taskOverview, setTaskOverview] = useState({
+    completed: 0,
+    inProgress: 0,
+    loading: true,
+    error: false,
+  });
+
+  // Keep the dashboard calendar accurate if it remains open after midnight.
+  useEffect(() => {
+    let timerId;
+    const scheduleRefresh = () => {
+      const tomorrow = new Date();
+      tomorrow.setHours(24, 0, 1, 0);
+      timerId = window.setTimeout(() => {
+        setToday(new Date());
+        scheduleRefresh();
+      }, tomorrow.getTime() - Date.now());
+    };
+
+    scheduleRefresh();
+    return () => window.clearTimeout(timerId);
+  }, []);
+
+  // Build the overview from real tasks across every board the user can access.
+  useEffect(() => {
+    let isActive = true;
+
+    const loadTaskOverview = async () => {
+      try {
+        const { data } = await fetchBoards();
+        const boards = Array.isArray(data) ? data : data.boards || [];
+        const taskResponses = await Promise.all(
+          boards.map((board) => fetchTasks(board._id || board.id))
+        );
+        const allTasks = taskResponses.flatMap(({ data: taskData }) => (
+          Array.isArray(taskData) ? taskData : taskData.tasks || []
+        ));
+        const total = allTasks.length;
+        const percentageForStatus = (status) => (
+          total === 0
+            ? 0
+            : Math.round((allTasks.filter((task) => task.status === status).length / total) * 100)
+        );
+
+        if (isActive) {
+          setTaskOverview({
+            completed: percentageForStatus('Done'),
+            inProgress: percentageForStatus('In Progress'),
+            loading: false,
+            error: false,
+          });
+        }
+      } catch {
+        if (isActive) {
+          setTaskOverview((current) => ({ ...current, loading: false, error: true }));
+        }
+      }
+    };
+
+    loadTaskOverview();
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   // Handle adding a new task
   const handleAddTask = (e) => {
@@ -40,7 +112,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
       status: 'Pending',
     };
 
-    setTasks([newTask, ...tasks]);
+    onTasksChange?.((currentTasks) => [newTask, ...currentTasks]);
     setActivities([
       { id: Date.now(), text: `✨ You added a new task '${newTaskTitle}'`, time: 'Just now' },
       ...activities
@@ -52,7 +124,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
 
   // Toggle task completion
   const toggleTaskStatus = (id) => {
-    setTasks(tasks.map(task => {
+    onTasksChange?.((currentTasks) => currentTasks.map(task => {
       if (task.id === id) {
         const newStatus = task.status === 'Pending' ? 'Completed' : 'Pending';
         return { ...task, status: newStatus };
@@ -65,6 +137,35 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth();
+  const currentMonthName = today.toLocaleDateString('en-GB', { month: 'long' });
+  const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const dashboardCalendarDays = [];
+
+  for (let offset = firstDayOfWeek; offset > 0; offset--) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth, 1 - offset),
+      isCurrentMonth: false,
+    });
+  }
+
+  for (let day = 1; day <= daysInCurrentMonth; day++) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth, day),
+      isCurrentMonth: true,
+    });
+  }
+
+  const totalGridCells = dashboardCalendarDays.length <= 35 ? 35 : 42;
+  for (let day = 1; dashboardCalendarDays.length < totalGridCells; day++) {
+    dashboardCalendarDays.push({
+      date: new Date(currentYear, currentMonth + 1, day),
+      isCurrentMonth: false,
+    });
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: bgColor, fontFamily: 'sans-serif', boxSizing: 'border-box', color: textColor }}>
@@ -193,18 +294,21 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '160px', background: isDark ? '#0f172a' : '#f8fafc', borderRadius: '8px', border: `1px dashed ${borderColor}`, padding: '16px', boxSizing: 'border-box' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px', color: textColor }}>
                     <span>Completed</span>
-                    <span style={{ fontWeight: 'bold' }}>65%</span>
+                    <span style={{ fontWeight: 'bold' }}>{taskOverview.loading ? '...' : `${taskOverview.completed}%`}</span>
                   </div>
                   <div style={{ width: '100%', background: isDark ? '#334155' : '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
-                    <div style={{ width: '65%', background: '#2563eb', height: '100%' }}></div>
+                    <div style={{ width: `${taskOverview.completed}%`, background: '#2563eb', height: '100%', transition: 'width 200ms ease' }}></div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '8px', color: textColor }}>
                     <span>In Progress</span>
-                    <span style={{ fontWeight: 'bold' }}>35%</span>
+                    <span style={{ fontWeight: 'bold' }}>{taskOverview.loading ? '...' : `${taskOverview.inProgress}%`}</span>
                   </div>
                   <div style={{ width: '100%', background: isDark ? '#334155' : '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: '35%', background: '#ca8a04', height: '100%' }}></div>
+                    <div style={{ width: `${taskOverview.inProgress}%`, background: '#ca8a04', height: '100%', transition: 'width 200ms ease' }}></div>
                   </div>
+                  {taskOverview.error && (
+                    <div style={{ marginTop: '10px', color: '#dc2626', fontSize: '11px' }}>Unable to load task progress.</div>
+                  )}
                 </div>
               </div>
 
@@ -268,13 +372,33 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light' }) {
                 <h3 style={{ margin: 0, fontSize: '15px', color: textColor }}>Calendar</h3>
                 <button onClick={() => onNavigate('calendarpage')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
               </div>
-              <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold', color: textColor, marginBottom: '10px' }}>August 2026</div>
+              <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold', color: textColor, marginBottom: '10px' }}>{currentMonthName} {currentYear}</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '12px', color: subTextColor }}>
                 <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-                <span>28</span><span>29</span><span>30</span><span>31</span><span>1</span><span>2</span><span>3</span>
-                <span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-                <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span>
-                <span>18</span><span>19</span><span style={{ background: '#2563eb', color: 'white', borderRadius: '50%', fontWeight: 'bold' }}>20</span><span>21</span><span>22</span><span>23</span><span>24</span>
+                {dashboardCalendarDays.map(({ date, isCurrentMonth }) => {
+                  const isToday = isSameDay(date, today);
+                  return (
+                    <button
+                      key={date.toISOString()}
+                      type="button"
+                      onClick={() => onNavigate('schedule', formatScheduleDate(date))}
+                      aria-label={formatScheduleDate(date)}
+                      style={{
+                        background: isToday ? '#2563eb' : 'transparent',
+                        border: 'none',
+                        borderRadius: '50%',
+                        color: isToday ? 'white' : (isCurrentMonth ? textColor : subTextColor),
+                        cursor: 'pointer',
+                        font: 'inherit',
+                        fontWeight: isToday ? 'bold' : 'normal',
+                        opacity: isCurrentMonth ? 1 : 0.5,
+                        padding: '2px 0',
+                      }}
+                    >
+                      {date.getDate()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

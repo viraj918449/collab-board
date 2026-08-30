@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     // Get Authorization header
     const authHeader = req.headers.authorization;
@@ -36,15 +37,25 @@ const protect = (req, res, next) => {
     );
 
     // Make sure user ID exists in token
-    if (!decoded._id) {
+    const userId = decoded._id || decoded.id || decoded.userId;
+
+    if (!userId) {
       return res.status(401).json({
         error: 'Invalid token: user ID not found'
       });
     }
 
-    // Store authenticated user
+    // A token can outlive a deleted database account. Verify the account here
+    // so every protected endpoint handles that case consistently.
+    const user = await User.findById(userId).select('_id');
+    if (!user) {
+      return res.status(401).json({ error: 'Your session is no longer valid. Please sign in again.' });
+    }
+
+    // Store a consistent authenticated-user shape for all routes.
     req.user = {
-      _id: decoded._id
+      _id: user._id,
+      id: user._id.toString()
     };
 
     next();

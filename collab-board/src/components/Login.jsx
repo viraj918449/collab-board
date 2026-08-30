@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { loginUser } from '../services/api';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@collabboard.com');
+  const [password, setPassword] = useState('admin123');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // Added loading state for better UX
@@ -20,16 +20,17 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
       // Store token using the key matching your auth middleware/storage expectations
       localStorage.setItem('token', data.token);
       localStorage.removeItem('collabToken');
-      
+
       // Optional: Store user profile object if returned by backend
       if (data.user) {
         localStorage.setItem('collabUser', JSON.stringify(data.user));
       }
 
       onLoginSuccess();
-      
+
     } catch (err) {
-      setError(err.message || 'Failed to connect to the server.');
+      const message = err?.response?.data?.message || err?.message || 'Failed to connect to the server.';
+      setError(message);
     } finally {
       setLoading(false);
     }

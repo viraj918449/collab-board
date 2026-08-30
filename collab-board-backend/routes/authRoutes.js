@@ -14,7 +14,7 @@ router.get('/me', protect, async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Your session is no longer valid. Please sign in again.' });
     }
 
     res.json(user);
@@ -29,7 +29,7 @@ router.put('/me', protect, async (req, res) => {
     const { name, email, bio, location, website, avatar } = req.body;
     const user = await User.findById(req.user._id);
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(401).json({ message: 'Your session is no longer valid. Please sign in again.' });
     if (name !== undefined) {
       if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ message: 'Name is required' });
       user.name = name.trim();
