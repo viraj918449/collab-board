@@ -63,8 +63,7 @@ export default function App() {
     localStorage.setItem('localNotifications', JSON.stringify(localNotifications));
   }, [localNotifications]);
 
-  const handleTaskCreated = (task) => {
-    setDashboardTasks((currentTasks) => [task, ...currentTasks]);
+  const createTaskNotification = (task) => {
     setLocalNotifications((currentNotifications) => [
       {
         _id: `local-${Date.now()}`,
@@ -76,6 +75,11 @@ export default function App() {
       },
       ...currentNotifications,
     ]);
+  };
+
+  const handleTaskCreated = (task) => {
+    setDashboardTasks((currentTasks) => [task, ...currentTasks]);
+    createTaskNotification(task);
   };
 
   const handleLogout = () => {
@@ -160,7 +164,7 @@ export default function App() {
           />
         );
       case 'project-overview':
-        return <ProjectOverview theme={theme} onNavigate={handleNavigate} tasks={projectTasks} onTasksChange={setProjectTasks} />;
+        return <ProjectOverview theme={theme} onNavigate={handleNavigate} tasks={projectTasks} onTasksChange={setProjectTasks} onTaskCreated={createTaskNotification} />;
       case 'board':
         return <Board boardId={selectedBoardId} />;
       case 'tasks':
