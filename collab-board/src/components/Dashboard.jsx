@@ -1,5 +1,5 @@
 // src/components/Dashboard.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { fetchBoards, fetchTasks, getCurrentUser } from '../services/api';
 
 const isSameDay = (firstDate, secondDate) => (
@@ -14,7 +14,7 @@ const formatScheduleDate = (date) => date.toLocaleDateString('en-GB', {
   year: 'numeric',
 });
 
-export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks = [], onTasksChange }) {
+export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks = [], onTasksChange, scheduleItems = [] }) {
   // Theme styling variables
   const isDark = theme === 'dark';
   const bgColor = isDark ? '#0f172a' : '#f8fafc';
@@ -182,6 +182,18 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
 
   const hour = currentTime.getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+
+  const todayScheduleItems = useMemo(() => {
+    const todayKey = [today.getFullYear(), String(today.getMonth() + 1).padStart(2, '0'), String(today.getDate()).padStart(2, '0')].join('-');
+    return scheduleItems
+      .filter((item) => item.date === todayKey)
+      .sort((first, second) => first.time.localeCompare(second.time));
+  }, [scheduleItems, today]);
+
+  const formatScheduleTime = (time) => new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
@@ -458,12 +470,18 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
             <div style={{ background: cardBg, padding: '20px', borderRadius: '12px', border: `1px solid ${borderColor}` }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', color: textColor }}>Today's Schedule</h3>
-                <button onClick={() => onNavigate('schedule')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
+                <button onClick={() => onNavigate('schedule', formatScheduleDate(today))} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View All</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: textColor }}>
-                <div><strong>10:00 AM</strong> - Sprint Planning</div>
-                <div><strong>12:00 PM</strong> - Design Landing Page</div>
-                <div><strong>02:00 PM</strong> - Travel App Telemetry</div>
+                {todayScheduleItems.length === 0 ? (
+                  <div style={{ color: subTextColor }}>No schedules for today.</div>
+                ) : (
+                  todayScheduleItems.map((item) => (
+                    <div key={item.id}>
+                      <strong>{formatScheduleTime(item.time)}</strong> - {item.title}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

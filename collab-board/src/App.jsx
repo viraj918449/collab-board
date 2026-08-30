@@ -56,6 +56,15 @@ export default function App() {
       return [];
     }
   });
+  const [scheduleItems, setScheduleItems] = useState(() => {
+    try {
+      const savedSchedule = JSON.parse(localStorage.getItem('scheduleItems') || '[]');
+      return Array.isArray(savedSchedule) ? savedSchedule : [];
+    } catch {
+      localStorage.removeItem('scheduleItems');
+      return [];
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem('dashboardTasks', JSON.stringify(dashboardTasks));
@@ -64,6 +73,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('localNotifications', JSON.stringify(localNotifications));
   }, [localNotifications]);
+
+  useEffect(() => {
+    localStorage.setItem('scheduleItems', JSON.stringify(scheduleItems));
+  }, [scheduleItems]);
 
   useEffect(() => {
     if (!hasToken) {
@@ -173,6 +186,7 @@ export default function App() {
             onNavigate={handleNavigate}
             tasks={dashboardTasks}
             onTasksChange={setDashboardTasks}
+            scheduleItems={scheduleItems}
           />
         );
       case 'project-overview':
@@ -213,6 +227,8 @@ export default function App() {
             onLogout={handleLogout}
             onNavigate={handleNavigate}
             selectedDate={selectedDate}
+            scheduleItems={scheduleItems}
+            onScheduleItemsChange={setScheduleItems}
           />
         );
       case 'calendarpage':

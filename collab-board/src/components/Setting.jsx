@@ -20,7 +20,6 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
   
   // Other settings toggles state
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   useEffect(() => {
     try {
@@ -308,18 +307,6 @@ export default function Setting({ onLogout, onNavigate, theme = 'light', setThem
               onChange={() => setEmailNotifications(!emailNotifications)} 
               style={{ width: '40px', height: '20px', cursor: 'pointer' }}
             />
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', background: isDark ? '#14532d' : '#f0fdf4', color: '#16a34a', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                🛡️
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: 'bold', color: textColor }}>Two-Factor Authentication</div>
-                <div style={{ fontSize: '11px', color: subTextColor }}>Add an extra layer of security to your account.</div>
-              </div>
-            </div>
           </div>
 
         </div>
