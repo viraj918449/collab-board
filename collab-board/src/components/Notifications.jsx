@@ -1,5 +1,14 @@
 // src/components/Notifications.jsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { fetchNotifications, markAllNotificationsAsRead, markNotificationAsRead } from '../services/api';
+
+const relativeTime = (date) => {
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 1000));
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+};
 
 export default function Notifications({ onLogout, onNavigate, theme = 'light' }) {
   // Theme styling variables
@@ -11,6 +20,47 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
   const borderColor = isDark ? '#334155' : '#ffffff';
 
   const [activeTab, setActiveTab] = useState('All');
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await fetchNotifications();
+      setNotifications(response.data);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to load notifications.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadNotifications(); }, []);
+
+  const filteredNotifications = notifications.filter((notification) => (
+    activeTab === 'Unread' ? !notification.read : activeTab === 'Mentions' ? notification.type === 'mention' : true
+  ));
+
+  const markAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead();
+      setNotifications((items) => items.map((item) => ({ ...item, read: true })));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update notifications.');
+    }
+  };
+
+  const markAsRead = async (id) => {
+    if (notifications.find((item) => item._id === id)?.read) return;
+    try {
+      await markNotificationAsRead(id);
+      setNotifications((items) => items.map((item) => item._id === id ? { ...item, read: true } : item));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Unable to update notification.');
+    }
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: bgColor, fontFamily: 'sans-serif', boxSizing: 'border-box', color: textColor }}>
@@ -82,13 +132,39 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
               </div>
             ))}
           </div>
-          <span style={{ fontSize: '13px', color: '#2563eb', cursor: 'pointer', fontWeight: '500', paddingBottom: '12px' }}>
-            Mark all as read this 
-          </span>
+          <button type="button" onClick={markAllAsRead} style={{ fontSize: '13px', color: '#2563eb', cursor: 'pointer', fontWeight: '500', paddingBottom: '12px', border: 'none', background: 'transparent' }}>
+            Mark all as read
+          </button>
         </div>
 
         {/* Notifications List Container */}
         <div style={{ background: cardBg, borderRadius: '12px', border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {loading && <div style={{ padding: '20px', color: subTextColor }}>Loading notifications...</div>}
+          {error && <div style={{ padding: '20px', color: '#dc2626' }}>{error}</div>}
+          {!loading && !error && filteredNotifications.length === 0 && <div style={{ padding: '20px', color: subTextColor }}>No notifications to show.</div>}
+          {!loading && filteredNotifications.map((notification, index) => {
+            const actorName = notification.actor?.name || notification.actor?.email || 'System';
+            return (
+              <button
+                type="button"
+                key={notification._id}
+                onClick={() => markAsRead(notification._id)}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', padding: '16px 20px', border: 'none', borderBottom: index < filteredNotifications.length - 1 ? `1px solid ${borderColor}` : 'none', background: notification.read ? cardBg : (isDark ? '#25344a' : '#eff6ff'), color: textColor, cursor: notification.read ? 'default' : 'pointer', textAlign: 'left' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: isDark ? '#1d4ed8' : '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', fontWeight: 'bold' }}>
+                    {notification.type === 'task_assigned' ? 'T' : '✓'}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', color: textColor }}><strong>{actorName}</strong></div>
+                    <div style={{ fontSize: '12px', color: subTextColor, marginTop: '2px' }}>{notification.message}</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '12px', color: subTextColor, whiteSpace: 'nowrap' }}>{relativeTime(notification.createdAt)}</div>
+              </button>
+            );
+          })}
+          {false && <>
           
           {/* Item 1 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${borderColor}` }}>
@@ -173,6 +249,7 @@ export default function Notifications({ onLogout, onNavigate, theme = 'light' })
             </div>
             <div style={{ fontSize: '12px', color: subTextColor, whiteSpace: 'nowrap' }}>yesterday</div>
           </div>
+          </>}
         </div>
 
       </div>

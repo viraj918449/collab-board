@@ -7,6 +7,7 @@ const protect = require('../middleware/auth');
 const Task = require('../models/Task');
 const Board = require('../models/Board');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // ==========================================
 // HELPER: GET CURRENT USER ID
@@ -259,6 +260,17 @@ router.post('/', protect, async (req, res) => {
     await savedTask.populate('createdBy', 'name email');
     await savedTask.populate('assignedTo', 'name email');
 
+    if (savedTask.assignedTo && savedTask.assignedTo._id.toString() !== userId.toString()) {
+      await Notification.create({
+        recipient: savedTask.assignedTo._id,
+        actor: userId,
+        type: 'task_assigned',
+        message: `You were assigned to "${savedTask.title}"`,
+        task: savedTask._id,
+        board: board._id,
+      });
+    }
+
     res.status(201).json(savedTask);
   } catch (err) {
     console.error('Create task error:', err);
@@ -326,6 +338,8 @@ router.put('/:id', protect, async (req, res) => {
       priority,
       assignedTo
     } = req.body;
+    const previousStatus = task.status;
+    const previousAssignee = task.assignedTo?.toString() || null;
 
     // ------------------------------------------
     // Update title
@@ -402,6 +416,33 @@ router.put('/:id', protect, async (req, res) => {
 
     await updatedTask.populate('createdBy', 'name email');
     await updatedTask.populate('assignedTo', 'name email');
+
+    const currentAssignee = updatedTask.assignedTo?._id?.toString() || null;
+    const notifications = [];
+
+    if (currentAssignee && currentAssignee !== previousAssignee && currentAssignee !== userId.toString()) {
+      notifications.push({
+        recipient: currentAssignee,
+        actor: userId,
+        type: 'task_assigned',
+        message: `You were assigned to "${updatedTask.title}"`,
+        task: updatedTask._id,
+        board: board._id,
+      });
+    }
+
+    if (status !== undefined && status !== previousStatus && currentAssignee && currentAssignee !== userId.toString()) {
+      notifications.push({
+        recipient: currentAssignee,
+        actor: userId,
+        type: 'task_status_changed',
+        message: `"${updatedTask.title}" was moved to ${updatedTask.status}`,
+        task: updatedTask._id,
+        board: board._id,
+      });
+    }
+
+    if (notifications.length) await Notification.insertMany(notifications);
 
     res.status(200).json(updatedTask);
   } catch (err) {
