@@ -29,6 +29,7 @@ export default function App() {
   });
   const [selectedDate, setSelectedDate] = useState(() => formatDate());
   const [selectedBoardId, setSelectedBoardId] = useState('');
+  const [projectTasks, setProjectTasks] = useState([]);
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
   const [dashboardTasks, setDashboardTasks] = useState(() => {
     try {
@@ -159,7 +160,7 @@ export default function App() {
           />
         );
       case 'project-overview':
-        return <ProjectOverview theme={theme} onNavigate={handleNavigate} />;
+        return <ProjectOverview theme={theme} onNavigate={handleNavigate} tasks={projectTasks} onTasksChange={setProjectTasks} />;
       case 'board':
         return <Board boardId={selectedBoardId} />;
       case 'tasks':
@@ -220,10 +221,11 @@ export default function App() {
       case 'upcomingtask':
         return (
           <Upcomingtask
-            theme={theme}       
-            setTheme={setTheme} 
+            theme={theme}
+            setTheme={setTheme}
             onLogout={handleLogout}
             onNavigate={handleNavigate}
+            tasks={projectTasks}
           />
         );
       case 'activity-history':

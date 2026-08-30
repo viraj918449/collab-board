@@ -8,10 +8,10 @@ const errorText = (error) => error.response?.data?.message || error.message || '
 const dateLabel = (date) => date ? new Date(date).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : 'No date';
 const initials = (person) => (person?.name || person?.email || '?').trim().slice(0, 2).toUpperCase();
 
-export default function ProjectOverview({ theme = 'light', onNavigate }) {
+export default function ProjectOverview({ theme = 'light', onNavigate, tasks: sharedTasks = [], onTasksChange }) {
   const [boards, setBoards] = useState([]);
   const [boardId, setBoardId] = useState('');
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(sharedTasks);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,14 +34,34 @@ export default function ProjectOverview({ theme = 'light', onNavigate }) {
     finally { setLoading(false); }
   }, []);
 
+  useEffect(() => { setTasks(sharedTasks); }, [sharedTasks]);
+
   useEffect(() => { loadBoards(); }, [loadBoards]);
   useEffect(() => {
-    if (!boardId) { setTasks([]); return; }
-    fetchTasks(boardId).then(({ data }) => setTasks(Array.isArray(data) ? data : data.tasks || [])).catch((requestError) => setError(errorText(requestError)));
-  }, [boardId]);
+    if (!boardId) {
+      setTasks([]);
+      onTasksChange?.([]);
+      return;
+    }
+
+    fetchTasks(boardId)
+      .then(({ data }) => {
+        const nextTasks = Array.isArray(data) ? data : data.tasks || [];
+        setTasks(nextTasks);
+        onTasksChange?.(nextTasks);
+      })
+      .catch((requestError) => setError(errorText(requestError)));
+  }, [boardId, onTasksChange]);
 
   const selectedBoard = boards.find((board) => idOf(board) === boardId);
   const visibleTasks = useMemo(() => tasks.filter((task) => task.title?.toLowerCase().includes(query.trim().toLowerCase())), [query, tasks]);
+  const updateTasks = useCallback((updater) => {
+    setTasks((currentTasks) => {
+      const nextTasks = typeof updater === 'function' ? updater(currentTasks) : updater;
+      onTasksChange?.(nextTasks);
+      return nextTasks;
+    });
+  }, [onTasksChange]);
   const openTaskForm = (status = 'To Do', task = null) => {
     setEditingId(task ? idOf(task) : null);
     setTaskForm(task ? { title: task.title || '', tag: task.tag || 'General', priority: task.priority || 'Medium', assignedTo: idOf(task.assignedTo) || '', boardId, status: task.status || status } : newTask(boardId, status));
@@ -52,14 +72,18 @@ export default function ProjectOverview({ theme = 'light', onNavigate }) {
     try {
       const payload = { ...taskForm, title: taskForm.title.trim(), assignedTo: taskForm.assignedTo || null };
       const { data } = editingId ? await updateTask(editingId, payload) : await createTask(payload);
-      setTasks((current) => editingId ? current.map((task) => idOf(task) === idOf(data) ? data : task) : [data, ...current]);
+      updateTasks((current) => editingId ? current.map((task) => idOf(task) === idOf(data) ? data : task) : [data, ...current]);
       setTaskForm(null); setEditingId(null); setNotice(editingId ? 'Task updated.' : 'Task added.');
     } catch (requestError) { setError(errorText(requestError)); }
     finally { setSaving(false); }
   };
   const removeTask = async (task) => {
     if (!window.confirm(`Delete "${task.title}"?`)) return;
-    try { await deleteTask(idOf(task)); setTasks((current) => current.filter((item) => idOf(item) !== idOf(task))); setNotice('Task deleted.'); }
+    try {
+      await deleteTask(idOf(task));
+      updateTasks((current) => current.filter((item) => idOf(item) !== idOf(task)));
+      setNotice('Task deleted.');
+    }
     catch (requestError) { setError(errorText(requestError)); }
   };
   const inviteMember = async (event) => {
