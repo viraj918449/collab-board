@@ -214,7 +214,17 @@ export default function Team({
   // =========================================================
   // STATISTICS
   // =========================================================
-  const isMemberOnline = (member) => onlineMemberIds.includes(String(member.id));
+  const currentUserId = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem('collabUser') || 'null');
+      return String(user?.id || user?._id || '');
+    } catch {
+      return '';
+    }
+  })();
+  const isMemberOnline = (member) => (
+    onlineMemberIds.includes(String(member.id)) || String(member.id) === currentUserId
+  );
   const memberStatus = (member) => isMemberOnline(member) ? 'Online' : member.status === 'Away' ? 'Away' : 'Offline';
   const onlineCount = members.filter(isMemberOnline).length;
 
