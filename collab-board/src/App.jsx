@@ -19,7 +19,12 @@ import './App.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState(() => localStorage.getItem('token') ? 'dashboard' : 'login');
-  const [selectedDate, setSelectedDate] = useState('20 August 2026');
+  const formatDate = (date = new Date()) => date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const [selectedDate, setSelectedDate] = useState(() => formatDate());
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
 
   // Updated navigation handler to accept an optional second argument for the date payload
