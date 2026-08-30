@@ -4,7 +4,7 @@ import React from 'react';
 import TaskCard from './TaskCard';
 import './Column.css';
 
-export default function Column({ column, tasks = [] }) {
+export default function Column({ column, tasks = [], onEdit, onDelete, onStatusChange }) {
   if (!column) {
     return null;
   }
@@ -20,6 +20,9 @@ export default function Column({ column, tasks = [] }) {
             <TaskCard
               key={task._id || task.id}
               task={task}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onStatusChange={onStatusChange}
             />
           ))}
       </div>

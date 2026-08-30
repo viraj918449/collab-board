@@ -5,10 +5,8 @@ import Login from './components/Login';
 import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import Dashboard from './components/Dashboard';
-import ProjectOverview from './components/ProjectOverview';
 import Notifications from './components/Notifications'; 
 import Tasks from './components/Tasks';
-import NewTask from './components/NewTask'; 
 import Schedule from './components/Schedule';
 import CalendarPage from './components/CalendarPage';
 import Setting from './components/Setting'; 
@@ -16,10 +14,11 @@ import Upcomingtask from './components/Upcomingtask';
 import Profile from './components/Profile'; 
 import ActivityHistory from './components/ActivityHistory';
 import Team from './components/Team';
+import Board from './components/Board';
 import './App.css';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('login');
+  const [currentView, setCurrentView] = useState(() => localStorage.getItem('token') ? 'dashboard' : 'login');
   const [selectedDate, setSelectedDate] = useState('20 August 2026');
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
 
@@ -95,12 +94,10 @@ export default function App() {
         );
       case 'project-overview':
         return (
-          <ProjectOverview 
-            theme={theme}
-            onLogout={() => setCurrentView('login')}
-            onNavigate={handleNavigate}
-          />
+          <Board />
         );
+      case 'board':
+        return <Board />;
       case 'tasks':
         return (
           <Tasks 
@@ -118,13 +115,7 @@ export default function App() {
           />
         );
       case 'newtask':
-        return (
-          <NewTask 
-            theme={theme}
-            onLogout={() => setCurrentView('login')}
-            onNavigate={handleNavigate}
-          />
-        );
+        return <Board />;
       case 'schedule':
         return (
           <Schedule 

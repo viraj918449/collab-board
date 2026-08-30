@@ -39,6 +39,7 @@ API.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('collabToken');
     }
 
     return Promise.reject(error);
@@ -96,15 +97,16 @@ export const deleteBoard = async (id) => {
 
 // Get board members
 export const fetchTeamMembers = async (boardId) => {
-  return API.get(`/boards/${boardId}/members`);
+  return API.get(`/boards/${boardId}`);
 };
 
 // Invite team member
 export const inviteTeamMember = async (boardId, invitationData) => {
-  return API.post(
-    `/boards/${boardId}/invitations`,
-    invitationData
-  );
+  return API.post(`/boards/${boardId}/members`, invitationData);
+};
+
+export const removeBoardMember = async (boardId, userId) => {
+  return API.delete(`/boards/${boardId}/members/${userId}`);
 };
 
 // ==========================================
@@ -113,7 +115,7 @@ export const inviteTeamMember = async (boardId, invitationData) => {
 
 // Get all tasks for a board
 export const fetchTasks = async (boardId) => {
-  return API.get(`/tasks/${boardId}`);
+  return API.get('/tasks', { params: { boardId } });
 };
 
 // Get one task

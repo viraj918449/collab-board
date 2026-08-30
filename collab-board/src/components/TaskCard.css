@@ -1,0 +1,7 @@
+.task-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgb(15 23 42 / 5%); }
+.task-card__header, .task-card__actions { display: flex; align-items: center; gap: 8px; }
+.task-card__header { justify-content: space-between; }.task-card h4 { margin: 12px 0 6px; color: #1e293b; font-size: 15px; }
+.task-card__tag, .task-card__priority { padding: 3px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; background: #eff6ff; color: #2563eb; }
+.task-card__priority--high { color: #b91c1c; background: #fee2e2; }.task-card__priority--medium { color: #a16207; background: #fef3c7; }.task-card__priority--low { color: #475569; background: #f1f5f9; }
+.task-card__assignee { margin: 0 0 12px; color: #64748b; font-size: 12px; }.task-card__actions { flex-wrap: wrap; }.task-card__actions select { margin-right: auto; }
+.task-card__actions button, .task-card__actions select { border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; background: #fff; font-size: 12px; cursor: pointer; }.task-card__actions .task-card__delete { color: #b91c1c; }

@@ -1,5 +1,6 @@
 // src/components/Login.jsx
 import React, { useState } from 'react';
+import { loginUser } from '../services/api';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
   const [email, setEmail] = useState('');
@@ -14,22 +15,11 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || data.message || 'Invalid login credentials.');
-      }
+      const { data } = await loginUser({ email, password });
 
       // Store token using the key matching your auth middleware/storage expectations
-      localStorage.setItem('collabToken', data.token);
+      localStorage.setItem('token', data.token);
+      localStorage.removeItem('collabToken');
       
       // Optional: Store user profile object if returned by backend
       if (data.user) {

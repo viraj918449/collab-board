@@ -246,7 +246,7 @@ router.put('/:id', protect, async (req, res) => {
 router.post('/:id/members', protect, async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
+    const { userId, email } = req.body;
     const currentUserId = getUserId(req);
 
     if (!currentUserId) {
@@ -261,16 +261,12 @@ router.post('/:id/members', protect, async (req, res) => {
       });
     }
 
-    if (!userId) {
-      return res.status(400).json({
-        message: 'User ID is required'
-      });
+    if (!userId && !email) {
+      return res.status(400).json({ message: 'User ID or email is required' });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({
-        message: 'Invalid user ID'
-      });
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
     }
 
     const board = await Board.findById(id);
@@ -288,7 +284,9 @@ router.post('/:id/members', protect, async (req, res) => {
       });
     }
 
-    const user = await User.findById(userId);
+    const user = userId
+      ? await User.findById(userId)
+      : await User.findOne({ email: String(email).trim().toLowerCase() });
 
     if (!user) {
       return res.status(404).json({
@@ -296,13 +294,13 @@ router.post('/:id/members', protect, async (req, res) => {
       });
     }
 
-    if (isBoardMember(board, userId)) {
+    if (isBoardMember(board, user._id)) {
       return res.status(400).json({
         message: 'User is already a member of this board'
       });
     }
 
-    board.members.push(userId);
+    board.members.push(user._id);
 
     const updatedBoard = await board.save();
 

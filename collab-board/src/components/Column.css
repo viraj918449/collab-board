@@ -1,0 +1,1 @@
+.column { min-width: 260px; flex: 1; background: #f8fafc; border-radius: 12px; padding: 14px; }.column h3 { margin: 0 0 12px; color: #334155; font-size: 15px; }.task-list { display: grid; gap: 10px; }

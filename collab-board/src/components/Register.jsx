@@ -1,6 +1,6 @@
 // src/components/Register.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
+import { registerUser } from '../services/api';
 
 export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
   const [fullName, setFullName] = useState('');
@@ -25,7 +25,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', {
+      await registerUser({
         email,
         password,
         name: fullName,
