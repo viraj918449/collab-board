@@ -1,6 +1,6 @@
 // src/components/Dashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { fetchBoards, fetchTasks } from '../services/api';
+import { fetchBoards, fetchTasks, getCurrentUser } from '../services/api';
 
 const isSameDay = (firstDate, secondDate) => (
   firstDate.getFullYear() === secondDate.getFullYear()
@@ -35,6 +35,14 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
   const [newTaskPriority, setNewTaskPriority] = useState('Medium');
   const [searchQuery, setSearchQuery] = useState('');
   const [today, setToday] = useState(() => new Date());
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [userName, setUserName] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('collabUser') || 'null')?.name || '';
+    } catch {
+      return '';
+    }
+  });
   const [taskOverview, setTaskOverview] = useState({
     completed: 0,
     inProgress: 0,
@@ -56,6 +64,26 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
 
     scheduleRefresh();
     return () => window.clearTimeout(timerId);
+  }, []);
+
+  // Keep the time-based greeting and signed-in user's name current.
+  useEffect(() => {
+    const timerId = window.setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => window.clearInterval(timerId);
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    getCurrentUser()
+      .then(({ data }) => {
+        if (!isActive) return;
+        setUserName(data.name || '');
+        localStorage.setItem('collabUser', JSON.stringify(data));
+      })
+      .catch(() => {
+        // The cached profile is used when the API is temporarily unavailable.
+      });
+    return () => { isActive = false; };
   }, []);
 
   // Build the overview from real tasks across every board the user can access.
@@ -137,6 +165,9 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const hour = currentTime.getHours();
+  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
 
   const currentYear = today.getFullYear();
   const currentMonth = today.getMonth();
@@ -247,9 +278,9 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
           </div>
         </div>
 
-        {/* Welcome Section */}
+        {/* Time-based greeting */}
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ margin: '0 0 4px 0', fontSize: '24px', color: textColor, fontWeight: 'bold' }}>Welcome back, 👋</h1>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: '24px', color: textColor, fontWeight: 'bold' }}>{greeting}{userName ? `, ${userName}` : ''} 👋</h1>
           <p style={{ margin: 0, color: subTextColor, fontSize: '14px' }}>Here's what's happening with your projects today.</p>
         </div>
 
