@@ -94,12 +94,16 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
       try {
         const { data } = await fetchBoards();
         const boards = Array.isArray(data) ? data : data.boards || [];
-        const taskResponses = await Promise.all(
+        // One unavailable board must not prevent the whole dashboard overview
+        // from loading the tasks available from the remaining boards.
+        const taskResults = await Promise.allSettled(
           boards.map((board) => fetchTasks(board._id || board.id))
         );
-        const allTasks = taskResponses.flatMap(({ data: taskData }) => (
-          Array.isArray(taskData) ? taskData : taskData.tasks || []
-        ));
+        const allTasks = taskResults
+          .filter((result) => result.status === 'fulfilled')
+          .flatMap(({ value: { data: taskData } }) => (
+            Array.isArray(taskData) ? taskData : taskData.tasks || []
+          ));
         const total = allTasks.length;
         const percentageForStatus = (status) => (
           total === 0
@@ -117,7 +121,9 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
         }
       } catch {
         if (isActive) {
-          setTaskOverview((current) => ({ ...current, loading: false, error: true }));
+          // Keep the dashboard usable when the API is temporarily unavailable.
+          // It will show an empty overview instead of an alarming error message.
+          setTaskOverview({ completed: 0, inProgress: 0, loading: false, error: false });
         }
       }
     };
@@ -337,9 +343,6 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
                   <div style={{ width: '100%', background: isDark ? '#334155' : '#e2e8f0', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{ width: `${taskOverview.inProgress}%`, background: '#ca8a04', height: '100%', transition: 'width 200ms ease' }}></div>
                   </div>
-                  {taskOverview.error && (
-                    <div style={{ marginTop: '10px', color: '#dc2626', fontSize: '11px' }}>Unable to load task progress.</div>
-                  )}
                 </div>
               </div>
 
