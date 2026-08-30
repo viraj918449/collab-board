@@ -1,97 +1,56 @@
-import React, { useMemo, useState } from 'react';
 
-export default function Team({ onNavigate, onLogout, theme = 'light' }) {
+import React, { useEffect, useMemo, useState } from 'react';
+
+const API_BASE_URL = 'http://localhost:5000/api/team';
+
+export default function Team({
+  onNavigate,
+  onLogout,
+  theme = 'light',
+}) {
   const isDark = theme === 'dark';
 
-  const bgColor = isDark ? '#0f172a' : '#f8fafc';
-  const cardBg = isDark ? '#1e293b' : '#ffffff';
-  const textColor = isDark ? '#f8fafc' : '#1e293b';
-  const subTextColor = isDark ? '#94a3b8' : '#64748b';
-  const borderColor = isDark ? '#334155' : '#e2e8f0';
-  const inputBg = isDark ? '#0f172a' : '#ffffff';
+  // =========================================================
+  // THEME
+  // =========================================================
+  const colors = {
+    background: isDark ? '#0f172a' : '#f8fafc',
+    card: isDark ? '#1e293b' : '#ffffff',
+    text: isDark ? '#f8fafc' : '#1e293b',
+    secondary: isDark ? '#94a3b8' : '#64748b',
+    border: isDark ? '#334155' : '#e2e8f0',
+    input: isDark ? '#0f172a' : '#ffffff',
+    tableHeader: isDark ? '#0f172a' : '#f8fafc',
+  };
 
-  const [members, setMembers] = useState([
-    {
-      id: 1,
-      name: 'Kasun Perera',
-      email: 'kasun.perera@collaboard.com',
-      role: 'Project Manager',
-      status: 'Online',
-      joined: 'Jan 12, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150',
-    },
-    {
-      id: 2,
-      name: 'Nethmi Fernando',
-      email: 'nethmi.fernando@collaboard.com',
-      role: 'UI/UX Designer',
-      status: 'Online',
-      joined: 'Jan 15, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-    },
-    {
-      id: 3,
-      name: 'Tharindu Silva',
-      email: 'tharindu.silva@collaboard.com',
-      role: 'Frontend Developer',
-      status: 'Online',
-      joined: 'Jan 18, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-    },
-    {
-      id: 4,
-      name: 'Sachini Kumari',
-      email: 'sachini.kumari@collaboard.com',
-      role: 'Backend Developer',
-      status: 'Away',
-      joined: 'Jan 20, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=150',
-    },
-    {
-      id: 5,
-      name: 'Dulani Jayasinghe',
-      email: 'dulani.jayasinghe@collaboard.com',
-      role: 'UI/UX Designer',
-      status: 'Online',
-      joined: 'Feb 02, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-    },
-    {
-      id: 6,
-      name: 'Kavinda Rathnayake',
-      email: 'kavinda.rathnayake@collaboard.com',
-      role: 'Frontend Developer',
-      status: 'Away',
-      joined: 'Feb 10, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150',
-    },
-    {
-      id: 7,
-      name: 'Chathura Weerasinghe',
-      email: 'chathura.weerasinghe@collaboard.com',
-      role: 'Backend Developer',
-      status: 'Offline',
-      joined: 'Feb 15, 2024',
-      avatar:
-        'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150',
-    },
-  ]);
+  // =========================================================
+  // STATE
+  // =========================================================
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('All Roles');
   const [currentPage, setCurrentPage] = useState(1);
+
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('Frontend Developer');
+  const [inviteRole, setInviteRole] =
+    useState('Frontend Developer');
+  const [inviteLoading, setInviteLoading] = useState(false);
 
-  const membersPerPage = 4;
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showActionMenu, setShowActionMenu] = useState(false);
 
+  const [notification, setNotification] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const membersPerPage = 5;
+
+  // =========================================================
+  // ROLES
+  // =========================================================
   const roles = [
     'All Roles',
     'Project Manager',
@@ -101,242 +60,670 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
     'Administrator',
   ];
 
+  // =========================================================
+  // AUTH HEADER
+  // =========================================================
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+  };
+
+  // =========================================================
+  // NOTIFICATION
+  // =========================================================
+  const showNotification = (message) => {
+    setNotification(message);
+
+    setTimeout(() => {
+      setNotification('');
+    }, 3000);
+  };
+
+  // =========================================================
+  // FETCH TEAM MEMBERS
+  // =========================================================
+  const fetchTeamMembers = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await fetch(API_BASE_URL, {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Failed to load team members'
+        );
+      }
+
+      const teamMembers = data.members || data || [];
+
+      setMembers(
+        teamMembers.map((member) => ({
+          ...member,
+
+          id: member._id || member.id,
+
+          name:
+            member.name ||
+            member.username ||
+            member.fullName ||
+            'Unknown Member',
+
+          email: member.email || '',
+
+          role: member.role || 'Member',
+
+          status: member.status || 'Offline',
+
+          joined:
+            member.joined ||
+            member.joinedDate ||
+            'Recently',
+
+          avatar:
+            member.avatar ||
+            member.profileImage ||
+            member.image ||
+            null,
+        }))
+      );
+    } catch (err) {
+      console.error('Fetch team error:', err);
+
+      setError(
+        err.message || 'Unable to load team members'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =========================================================
+  // INITIAL LOAD
+  // =========================================================
+  useEffect(() => {
+    fetchTeamMembers();
+  }, []);
+
+  // =========================================================
+  // FILTER MEMBERS
+  // =========================================================
   const filteredMembers = useMemo(() => {
+    const search = searchQuery.trim().toLowerCase();
+
     return members.filter((member) => {
-      const search = searchQuery.toLowerCase();
+      const name = String(member.name || '').toLowerCase();
+      const email = String(member.email || '').toLowerCase();
+      const role = String(member.role || '');
 
       const matchesSearch =
-        member.name.toLowerCase().includes(search) ||
-        member.email.toLowerCase().includes(search);
+        name.includes(search) ||
+        email.includes(search);
 
       const matchesRole =
-        selectedRole === 'All Roles' || member.role === selectedRole;
+        selectedRole === 'All Roles' ||
+        role === selectedRole;
 
       return matchesSearch && matchesRole;
     });
   }, [members, searchQuery, selectedRole]);
 
+  // =========================================================
+  // PAGINATION
+  // =========================================================
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredMembers.length / membersPerPage)
+    Math.ceil(
+      filteredMembers.length / membersPerPage
+    )
   );
 
-  const displayedMembers = filteredMembers.slice(
-    (currentPage - 1) * membersPerPage,
-    currentPage * membersPerPage
-  );
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
+  const displayedMembers =
+    filteredMembers.slice(
+      (currentPage - 1) * membersPerPage,
+      currentPage * membersPerPage
+    );
+
+  // =========================================================
+  // STATISTICS
+  // =========================================================
   const onlineCount = members.filter(
     (member) => member.status === 'Online'
   ).length;
 
-  const uniqueRoles = new Set(members.map((member) => member.role)).size;
+  const pendingInvitations = members.filter(
+    (member) =>
+      member.joined === 'Pending invitation'
+  ).length;
 
-  const handleInvite = (e) => {
-    e.preventDefault();
+  const uniqueRoles = new Set(
+    members
+      .map((member) => member.role)
+      .filter(Boolean)
+  ).size;
 
-    if (!inviteEmail.trim()) return;
+  // =========================================================
+  // INVITE MEMBER
+  // =========================================================
+  const handleInvite = async (event) => {
+    event.preventDefault();
 
-    const newMember = {
-      id: Date.now(),
-      name: inviteEmail.split('@')[0],
-      email: inviteEmail,
-      role: inviteRole,
-      status: 'Offline',
-      joined: 'Pending invitation',
-      avatar: null,
-    };
+    const email = inviteEmail.trim().toLowerCase();
 
-    setMembers((previousMembers) => [...previousMembers, newMember]);
-    setInviteEmail('');
-    setShowInviteModal(false);
+    if (!email) {
+      showNotification('Please enter an email address.');
+      return;
+    }
 
-    alert(`Invitation sent to ${newMember.email}`);
+    const alreadyExists = members.some(
+      (member) =>
+        String(member.email).toLowerCase() === email
+    );
+
+    if (alreadyExists) {
+      showNotification(
+        'This email is already a team member.'
+      );
+      return;
+    }
+
+    try {
+      setInviteLoading(true);
+
+      /*
+       * Change this endpoint if your backend
+       * uses another invitation route.
+       */
+      const response = await fetch(
+        `${API_BASE_URL}/invite`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            email,
+            role: inviteRole,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            'Failed to send invitation'
+        );
+      }
+
+      setInviteEmail('');
+      setInviteRole('Frontend Developer');
+      setShowInviteModal(false);
+
+      showNotification(
+        data.message ||
+          `Invitation sent to ${email}`
+      );
+
+      await fetchTeamMembers();
+
+      setCurrentPage(1);
+    } catch (err) {
+      console.error('Invite error:', err);
+
+      showNotification(
+        err.message ||
+          'Failed to send invitation'
+      );
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
+  // =========================================================
+  // REMOVE MEMBER
+  // =========================================================
+  const handleRemoveMember = async (member) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to remove ${member.name} from the team?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      /*
+       * Change this endpoint if your backend
+       * uses another remove route.
+       */
+      const response = await fetch(
+        `${API_BASE_URL}/${member.id}`,
+        {
+          method: 'DELETE',
+          headers: getAuthHeaders(),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            'Failed to remove team member'
+        );
+      }
+
+      setSelectedMember(null);
+      setShowActionMenu(false);
+
+      showNotification(
+        data.message ||
+          `${member.name} has been removed.`
+      );
+
+      await fetchTeamMembers();
+    } catch (err) {
+      console.error('Remove member error:', err);
+
+      showNotification(
+        err.message ||
+          'Failed to remove member'
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =========================================================
+  // CHANGE ROLE
+  // =========================================================
+  const handleChangeRole = async (member) => {
+    const newRole = window.prompt(
+      `Enter new role for ${member.name}:`,
+      member.role
+    );
+
+    if (!newRole || !newRole.trim()) {
+      return;
+    }
+
+    const cleanedRole = newRole.trim();
+
+    if (cleanedRole === member.role) {
+      setShowActionMenu(false);
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+
+      /*
+       * Change this endpoint if your backend
+       * uses another role update route.
+       */
+      const response = await fetch(
+        `${API_BASE_URL}/${member.id}/role`,
+        {
+          method: 'PUT',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({
+            role: cleanedRole,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            'Failed to update member role'
+        );
+      }
+
+      setShowActionMenu(false);
+
+      showNotification(
+        data.message ||
+          `${member.name}'s role has been updated.`
+      );
+
+      await fetchTeamMembers();
+    } catch (err) {
+      console.error('Change role error:', err);
+
+      showNotification(
+        err.message ||
+          'Failed to update role'
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // =========================================================
+  // ACTION MENU
+  // =========================================================
+  const openActionMenu = (member) => {
+    setSelectedMember(member);
+    setShowActionMenu(true);
+  };
+
+  const closeActionMenu = () => {
+    if (!actionLoading) {
+      setShowActionMenu(false);
+      setSelectedMember(null);
+    }
+  };
+
+  // =========================================================
+  // ROLE STYLE
+  // =========================================================
   const roleStyle = (role) => {
     const styles = {
       'Project Manager': {
-        background: isDark ? '#1e3a5f' : '#e8f1ff',
-        color: '#2563a9',
+        background: isDark
+          ? '#1e3a5f'
+          : '#e8f1ff',
+        color: isDark
+          ? '#93c5fd'
+          : '#2563a9',
       },
+
       'UI/UX Designer': {
-        background: isDark ? '#134e4a' : '#e5f7f4',
-        color: '#0f766e',
+        background: isDark
+          ? '#134e4a'
+          : '#e5f7f4',
+        color: isDark
+          ? '#5eead4'
+          : '#0f766e',
       },
+
       'Frontend Developer': {
-        background: isDark ? '#312e81' : '#eee9ff',
-        color: '#5b4ab1',
+        background: isDark
+          ? '#312e81'
+          : '#eee9ff',
+        color: isDark
+          ? '#c4b5fd'
+          : '#5b4ab1',
       },
+
       'Backend Developer': {
-        background: isDark ? '#78350f' : '#fff5df',
-        color: '#a16207',
+        background: isDark
+          ? '#78350f'
+          : '#fff5df',
+        color: isDark
+          ? '#fcd34d'
+          : '#a16207',
       },
+
       Administrator: {
-        background: isDark ? '#374151' : '#edf1f5',
-        color: isDark ? '#e5e7eb' : '#475569',
+        background: isDark
+          ? '#374151'
+          : '#edf1f5',
+        color: isDark
+          ? '#e5e7eb'
+          : '#475569',
       },
     };
 
     return (
       styles[role] || {
-        background: '#e2e8f0',
-        color: '#475569',
+        background: isDark
+          ? '#334155'
+          : '#e2e8f0',
+        color: isDark
+          ? '#cbd5e1'
+          : '#475569',
       }
     );
   };
 
+  // =========================================================
+  // STATUS STYLE
+  // =========================================================
   const statusColor = (status) => {
-    if (status === 'Online') return '#10b981';
-    if (status === 'Away') return '#f59e0b';
+    if (status === 'Online') {
+      return '#10b981';
+    }
+
+    if (status === 'Away') {
+      return '#f59e0b';
+    }
+
     return '#94a3b8';
   };
 
+  // =========================================================
+  // NAVIGATION STYLE
+  // =========================================================
+  const navigationStyle = (active = false) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '11px 12px',
+    color: active
+      ? '#ffffff'
+      : colors.secondary,
+    background: active
+      ? '#2563eb'
+      : 'transparent',
+    borderRadius: '9px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: active ? '600' : '500',
+    transition: '0.2s',
+  });
+
+  // =========================================================
+  // RENDER
+  // =========================================================
   return (
     <div
       style={{
         display: 'flex',
         minHeight: '100vh',
         width: '100%',
-        maxWidth: '100vw',
-        overflow: 'hidden',
-        background: bgColor,
-        fontFamily: 'sans-serif',
-        color: textColor,
+        background: colors.background,
+        color: colors.text,
+        fontFamily:
+          'Inter, Arial, Helvetica, sans-serif',
         boxSizing: 'border-box',
       }}
     >
-      <div
+      {/* =====================================================
+          SIDEBAR
+      ====================================================== */}
+      <aside
         style={{
           width: '240px',
           minWidth: '240px',
           flexShrink: 0,
-          background: cardBg,
-          borderRight: `1px solid ${borderColor}`,
+          background: colors.card,
+          borderRight:
+            `1px solid ${colors.border}`,
           display: 'flex',
           flexDirection: 'column',
           padding: '20px',
           boxSizing: 'border-box',
         }}
       >
+        {/* LOGO */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             fontSize: '18px',
-            fontWeight: 'bold',
-            marginBottom: '30px',
+            fontWeight: '700',
+            marginBottom: '32px',
           }}
         >
           <span
             style={{
+              width: '38px',
+              height: '38px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               background: '#2563eb',
-              color: 'white',
-              padding: '6px',
-              borderRadius: '8px',
+              color: '#ffffff',
+              borderRadius: '10px',
+              fontSize: '20px',
             }}
           >
             📅
           </span>
+
           CollabBoard
         </div>
 
-        <div
+        {/* NAVIGATION */}
+        <nav
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px',
+            gap: '7px',
             flex: 1,
           }}
         >
           <div
-            onClick={() => onNavigate('dashboard')}
-            style={navStyle(subTextColor)}
+            onClick={() =>
+              onNavigate?.('dashboard')
+            }
+            style={navigationStyle()}
           >
             📊 Dashboard
           </div>
 
           <div
-            onClick={() => onNavigate('profile')}
-            style={navStyle(subTextColor)}
+            onClick={() =>
+              onNavigate?.('profile')
+            }
+            style={navigationStyle()}
           >
             👤 Profile
           </div>
 
           <div
-            onClick={() => onNavigate('tasks')}
-            style={navStyle(subTextColor)}
+            onClick={() =>
+              onNavigate?.('tasks')
+            }
+            style={navigationStyle()}
           >
             📋 Tasks
           </div>
 
           <div
-            style={{
-              ...navStyle('white'),
-              background: '#2563eb',
-              fontWeight: '600',
-            }}
+            style={navigationStyle(true)}
           >
             👥 Team
           </div>
 
           <div
-            onClick={() => onNavigate('project-overview')}
-            style={navStyle(subTextColor)}
+            onClick={() =>
+              onNavigate?.('project-overview')
+            }
+            style={navigationStyle()}
           >
             📁 Project Overview
           </div>
 
           <div
-            onClick={() => onNavigate('setting')}
-            style={navStyle(subTextColor)}
+            onClick={() =>
+              onNavigate?.('setting')
+            }
+            style={navigationStyle()}
           >
             ⚙️ Setting
           </div>
-        </div>
+        </nav>
 
+        {/* LOGOUT */}
         <button
           onClick={onLogout}
           style={{
-            padding: '10px',
-            background: isDark ? '#7f1d1d' : '#fee2e2',
-            color: isDark ? '#fca5a5' : '#dc2626',
+            width: '100%',
+            padding: '11px',
+            background: isDark
+              ? '#7f1d1d'
+              : '#fee2e2',
+            color: isDark
+              ? '#fca5a5'
+              : '#dc2626',
             border: 'none',
-            borderRadius: '8px',
-            fontWeight: 'bold',
+            borderRadius: '9px',
+            fontWeight: '600',
             cursor: 'pointer',
           }}
         >
           Logout
         </button>
-      </div>
+      </aside>
 
-      <div
+      {/* =====================================================
+          MAIN CONTENT
+      ====================================================== */}
+      <main
         style={{
           flex: 1,
           minWidth: 0,
-          width: 0,
-          maxWidth: '100%',
           height: '100vh',
-          padding: '32px 40px',
-          boxSizing: 'border-box',
           overflowY: 'auto',
-          overflowX: 'hidden',
+          boxSizing: 'border-box',
+          padding: '32px 40px',
         }}
       >
-        <div
+        {/* NOTIFICATION */}
+        {notification && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '25px',
+              right: '25px',
+              zIndex: 3000,
+              padding: '13px 18px',
+              background: '#2563eb',
+              color: '#ffffff',
+              borderRadius: '10px',
+              boxShadow:
+                '0 8px 25px rgba(0,0,0,0.15)',
+              fontSize: '14px',
+              fontWeight: '600',
+            }}
+          >
+            {notification}
+          </div>
+        )}
+
+        {/* HEADER */}
+        <header
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'flex-start',
             gap: '20px',
             marginBottom: '30px',
-            maxWidth: '100%',
-            minWidth: 0,
           }}
         >
-          <div style={{ minWidth: 0 }}>
+          <div>
             <h1
               style={{
                 margin: 0,
@@ -350,11 +737,12 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
             <p
               style={{
                 margin: '8px 0 0',
-                color: subTextColor,
-                fontSize: '16px',
+                color: colors.secondary,
+                fontSize: '15px',
               }}
             >
-              Manage your team members and their roles.
+              Manage your team members and
+              their roles.
             </p>
           </div>
 
@@ -362,44 +750,47 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '16px',
-              minWidth: 0,
-              flexShrink: 1,
+              gap: '12px',
             }}
           >
+            {/* SEARCH */}
             <div
               style={{
                 position: 'relative',
-                minWidth: 0,
               }}
             >
               <span
                 style={{
                   position: 'absolute',
-                  left: '14px',
+                  left: '13px',
                   top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: subTextColor,
+                  transform:
+                    'translateY(-50%)',
+                  color: colors.secondary,
                 }}
               >
                 🔍
               </span>
 
               <input
+                type="text"
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
+                onChange={(event) => {
+                  setSearchQuery(
+                    event.target.value
+                  );
                   setCurrentPage(1);
                 }}
                 placeholder="Search team members..."
                 style={{
                   width: '280px',
-                  maxWidth: '100%',
-                  padding: '12px 14px 12px 40px',
+                  padding:
+                    '12px 14px 12px 40px',
                   borderRadius: '10px',
-                  border: `1px solid ${borderColor}`,
-                  background: inputBg,
-                  color: textColor,
+                  border:
+                    `1px solid ${colors.border}`,
+                  background: colors.input,
+                  color: colors.text,
                   outline: 'none',
                   fontSize: '14px',
                   boxSizing: 'border-box',
@@ -407,15 +798,18 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
               />
             </div>
 
+            {/* INVITE */}
             <button
-              onClick={() => setShowInviteModal(true)}
+              onClick={() =>
+                setShowInviteModal(true)
+              }
               style={{
-                padding: '12px 20px',
+                padding: '12px 18px',
                 background: '#2563eb',
-                color: 'white',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '10px',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
@@ -424,95 +818,142 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
               ＋ Invite Member
             </button>
           </div>
-        </div>
+        </header>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-            gap: '18px',
-            marginBottom: '30px',
-            width: '100%',
-            minWidth: 0,
-          }}
-        >
-          <StatCard
-            icon="👥"
-            iconBg="#eaf2ff"
-            iconColor="#2563eb"
-            title="Total Members"
-            value={members.length}
-            description="Active team members"
-            cardBg={cardBg}
-            textColor={textColor}
-            subTextColor={subTextColor}
-            borderColor={borderColor}
-          />
-
-          <StatCard
-            icon="♙"
-            iconBg="#e7f8f0"
-            iconColor="#059669"
-            title="Online Now"
-            value={onlineCount}
-            description="Currently online"
-            cardBg={cardBg}
-            textColor={textColor}
-            subTextColor={subTextColor}
-            borderColor={borderColor}
-          />
-
-          <StatCard
-            icon="♔"
-            iconBg="#f0ecff"
-            iconColor="#7c3aed"
-            title="Roles"
-            value={uniqueRoles}
-            description="Different roles"
-            cardBg={cardBg}
-            textColor={textColor}
-            subTextColor={subTextColor}
-            borderColor={borderColor}
-          />
-
-          <StatCard
-            icon="♧"
-            iconBg="#fff6e5"
-            iconColor="#d97706"
-            title="Invitations"
-            value="2"
-            description="Pending invitations"
-            cardBg={cardBg}
-            textColor={textColor}
-            subTextColor={subTextColor}
-            borderColor={borderColor}
-          />
-        </div>
-
-        <div
-          style={{
-            background: cardBg,
-            border: `1px solid ${borderColor}`,
-            borderRadius: '16px',
-            padding: '20px',
-            width: '100%',
-            maxWidth: '100%',
-            minWidth: 0,
-            boxSizing: 'border-box',
-            overflow: 'hidden',
-            boxShadow: isDark
-              ? 'none'
-              : '0 4px 18px rgba(15, 23, 42, 0.04)',
-          }}
-        >
+        {/* ERROR */}
+        {error && (
           <div
             style={{
+              background: isDark
+                ? '#450a0a'
+                : '#fef2f2',
+              color: isDark
+                ? '#fca5a5'
+                : '#dc2626',
+              border:
+                `1px solid ${
+                  isDark
+                    ? '#7f1d1d'
+                    : '#fecaca'
+                }`,
+              padding: '14px 16px',
+              borderRadius: '10px',
+              marginBottom: '20px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               gap: '15px',
+            }}
+          >
+            <span>{error}</span>
+
+            <button
+              onClick={fetchTeamMembers}
+              style={{
+                border: 'none',
+                background: '#dc2626',
+                color: '#ffffff',
+                padding: '8px 13px',
+                borderRadius: '7px',
+                cursor: 'pointer',
+                fontWeight: '600',
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* STATISTICS */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              'repeat(4, minmax(0, 1fr))',
+            gap: '18px',
+            marginBottom: '30px',
+          }}
+        >
+          <StatCard
+            icon="👥"
+            iconBg={
+              isDark
+                ? '#172554'
+                : '#eaf2ff'
+            }
+            iconColor="#2563eb"
+            title="Total Members"
+            value={members.length}
+            description="Team members"
+            {...colors}
+          />
+
+          <StatCard
+            icon="●"
+            iconBg={
+              isDark
+                ? '#064e3b'
+                : '#e7f8f0'
+            }
+            iconColor="#059669"
+            title="Online Now"
+            value={onlineCount}
+            description="Currently online"
+            {...colors}
+          />
+
+          <StatCard
+            icon="♟"
+            iconBg={
+              isDark
+                ? '#312e81'
+                : '#f0ecff'
+            }
+            iconColor="#7c3aed"
+            title="Roles"
+            value={uniqueRoles}
+            description="Different roles"
+            {...colors}
+          />
+
+          <StatCard
+            icon="✉"
+            iconBg={
+              isDark
+                ? '#78350f'
+                : '#fff6e5'
+            }
+            iconColor="#d97706"
+            title="Invitations"
+            value={pendingInvitations}
+            description="Pending invitations"
+            {...colors}
+          />
+        </div>
+
+        {/* TEAM CARD */}
+        <section
+          style={{
+            background: colors.card,
+            border:
+              `1px solid ${colors.border}`,
+            borderRadius: '16px',
+            padding: '20px',
+            boxSizing: 'border-box',
+            boxShadow: isDark
+              ? 'none'
+              : '0 4px 18px rgba(15,23,42,0.04)',
+          }}
+        >
+          {/* TABLE HEADER */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent:
+                'space-between',
+              alignItems: 'center',
+              gap: '15px',
               marginBottom: '18px',
-              minWidth: 0,
             }}
           >
             <h2
@@ -526,329 +967,507 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
 
             <select
               value={selectedRole}
-              onChange={(e) => {
-                setSelectedRole(e.target.value);
+              onChange={(event) => {
+                setSelectedRole(
+                  event.target.value
+                );
                 setCurrentPage(1);
               }}
               style={{
                 padding: '10px 14px',
                 borderRadius: '9px',
-                border: `1px solid ${borderColor}`,
-                background: inputBg,
-                color: textColor,
+                border:
+                  `1px solid ${colors.border}`,
+                background: colors.input,
+                color: colors.text,
                 outline: 'none',
-                minWidth: '165px',
+                minWidth: '170px',
                 cursor: 'pointer',
-                flexShrink: 0,
               }}
             >
               {roles.map((role) => (
-                <option key={role}>{role}</option>
+                <option
+                  key={role}
+                  value={role}
+                >
+                  {role}
+                </option>
               ))}
             </select>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns:
-                'minmax(0, 2.2fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.1fr) 50px',
-              gap: '10px',
-              width: '100%',
-              padding: '16px',
-              background: isDark ? '#0f172a' : '#f8fafc',
-              borderRadius: '10px',
-              color: '#2563a9',
-              fontWeight: '600',
-              fontSize: '14px',
-              boxSizing: 'border-box',
-              minWidth: 0,
-            }}
-          >
-            <div>Member</div>
-            <div>Role</div>
-            <div>Status</div>
-            <div>Joined</div>
-            <div>Actions</div>
-          </div>
-
-          {displayedMembers.length > 0 ? (
-            displayedMembers.map((member) => (
+          {/* LOADING */}
+          {loading ? (
+            <div
+              style={{
+                padding: '70px 20px',
+                textAlign: 'center',
+                color: colors.secondary,
+              }}
+            >
               <div
-                key={member.id}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns:
-                    'minmax(0, 2.2fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1.1fr) 50px',
-                  gap: '10px',
+                  fontSize: '35px',
+                  marginBottom: '12px',
+                }}
+              >
+                ⏳
+              </div>
+
+              <div
+                style={{
+                  fontWeight: '600',
+                }}
+              >
+                Loading team members...
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* TABLE */}
+              <div
+                style={{
                   width: '100%',
-                  minWidth: 0,
-                  alignItems: 'center',
-                  padding: '20px 8px',
-                  borderBottom: `1px solid ${borderColor}`,
-                  boxSizing: 'border-box',
+                  overflowX: 'auto',
                 }}
               >
                 <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    minWidth: 0,
-                    overflow: 'hidden',
+                    minWidth: '850px',
                   }}
                 >
-                  {member.avatar ? (
-                    <img
-                      src={member.avatar}
-                      alt={member.name}
-                      style={{
-                        width: '52px',
-                        height: '52px',
-                        minWidth: '52px',
-                        borderRadius: '50%',
-                        objectFit: 'cover',
-                      }}
-                    />
+                  {/* TABLE HEAD */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns:
+                        '2.3fr 1.5fr 1fr 1.2fr 55px',
+                      gap: '12px',
+                      padding: '15px',
+                      background:
+                        colors.tableHeader,
+                      borderRadius: '10px',
+                      color: '#2563a9',
+                      fontWeight: '600',
+                      fontSize: '13px',
+                    }}
+                  >
+                    <div>Member</div>
+                    <div>Role</div>
+                    <div>Status</div>
+                    <div>Joined</div>
+                    <div>Action</div>
+                  </div>
+
+                  {/* MEMBERS */}
+                  {displayedMembers.length > 0 ? (
+                    displayedMembers.map(
+                      (member) => (
+                        <div
+                          key={member.id}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns:
+                              '2.3fr 1.5fr 1fr 1.2fr 55px',
+                            gap: '12px',
+                            alignItems:
+                              'center',
+                            padding:
+                              '18px 15px',
+                            borderBottom:
+                              `1px solid ${colors.border}`,
+                          }}
+                        >
+                          {/* MEMBER */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems:
+                                'center',
+                              gap: '13px',
+                              minWidth: 0,
+                            }}
+                          >
+                            {member.avatar ? (
+                              <img
+                                src={
+                                  member.avatar
+                                }
+                                alt={
+                                  member.name
+                                }
+                                onError={(
+                                  event
+                                ) => {
+                                  event.currentTarget.style.display =
+                                    'none';
+                                }}
+                                style={{
+                                  width: '48px',
+                                  height: '48px',
+                                  minWidth:
+                                    '48px',
+                                  borderRadius:
+                                    '50%',
+                                  objectFit:
+                                    'cover',
+                                }}
+                              />
+                            ) : (
+                              <Avatar
+                                name={
+                                  member.name
+                                }
+                              />
+                            )}
+
+                            <div
+                              style={{
+                                minWidth: 0,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  fontWeight:
+                                    '600',
+                                  fontSize:
+                                    '14px',
+                                  marginBottom:
+                                    '4px',
+                                  overflow:
+                                    'hidden',
+                                  textOverflow:
+                                    'ellipsis',
+                                  whiteSpace:
+                                    'nowrap',
+                                }}
+                              >
+                                {
+                                  member.name
+                                }
+                              </div>
+
+                              <div
+                                style={{
+                                  color:
+                                    colors.secondary,
+                                  fontSize:
+                                    '13px',
+                                  overflow:
+                                    'hidden',
+                                  textOverflow:
+                                    'ellipsis',
+                                  whiteSpace:
+                                    'nowrap',
+                                }}
+                              >
+                                {
+                                  member.email
+                                }
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ROLE */}
+                          <div>
+                            <span
+                              style={{
+                                ...roleStyle(
+                                  member.role
+                                ),
+                                display:
+                                  'inline-block',
+                                padding:
+                                  '8px 11px',
+                                borderRadius:
+                                  '8px',
+                                fontSize:
+                                  '12px',
+                                fontWeight:
+                                  '600',
+                                maxWidth:
+                                  '100%',
+                                overflow:
+                                  'hidden',
+                                textOverflow:
+                                  'ellipsis',
+                                whiteSpace:
+                                  'nowrap',
+                              }}
+                            >
+                              {
+                                member.role
+                              }
+                            </span>
+                          </div>
+
+                          {/* STATUS */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems:
+                                'center',
+                              gap: '8px',
+                              color:
+                                colors.secondary,
+                              fontSize:
+                                '13px',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '9px',
+                                height: '9px',
+                                borderRadius:
+                                  '50%',
+                                background:
+                                  statusColor(
+                                    member.status
+                                  ),
+                              }}
+                            />
+
+                            {
+                              member.status
+                            }
+                          </div>
+
+                          {/* JOINED */}
+                          <div
+                            style={{
+                              color:
+                                colors.secondary,
+                              fontSize:
+                                '13px',
+                              overflow:
+                                'hidden',
+                              textOverflow:
+                                'ellipsis',
+                              whiteSpace:
+                                'nowrap',
+                            }}
+                          >
+                            {
+                              member.joined
+                            }
+                          </div>
+
+                          {/* ACTION */}
+                          <button
+                            onClick={() =>
+                              openActionMenu(
+                                member
+                              )
+                            }
+                            disabled={
+                              actionLoading
+                            }
+                            style={{
+                              width: '40px',
+                              height: '40px',
+                              border:
+                                `1px solid ${colors.border}`,
+                              background:
+                                colors.input,
+                              color:
+                                colors.text,
+                              borderRadius:
+                                '9px',
+                              fontSize:
+                                '19px',
+                              cursor:
+                                actionLoading
+                                  ? 'not-allowed'
+                                  : 'pointer',
+                              opacity:
+                                actionLoading
+                                  ? 0.5
+                                  : 1,
+                            }}
+                          >
+                            ⋮
+                          </button>
+                        </div>
+                      )
+                    )
                   ) : (
                     <div
                       style={{
-                        width: '52px',
-                        height: '52px',
-                        minWidth: '52px',
-                        borderRadius: '50%',
-                        background: '#e2e8f0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: '700',
-                        fontSize: '20px',
-                        color: '#64748b',
+                        padding:
+                          '60px 20px',
+                        textAlign:
+                          'center',
+                        color:
+                          colors.secondary,
                       }}
                     >
-                      {member.name.substring(0, 2).toUpperCase()}
+                      <div
+                        style={{
+                          fontSize: '35px',
+                          marginBottom:
+                            '10px',
+                        }}
+                      >
+                        👥
+                      </div>
+
+                      <div
+                        style={{
+                          fontWeight:
+                            '600',
+                          marginBottom:
+                            '5px',
+                        }}
+                      >
+                        No team members found
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize:
+                            '13px',
+                        }}
+                      >
+                        Try changing your
+                        search or role
+                        filter.
+                      </div>
                     </div>
                   )}
-
-                  <div
-                    style={{
-                      minWidth: 0,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: '600',
-                        fontSize: '15px',
-                        marginBottom: '5px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {member.name}
-                    </div>
-
-                    <div
-                      style={{
-                        color: subTextColor,
-                        fontSize: '14px',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {member.email}
-                    </div>
-                  </div>
                 </div>
+              </div>
 
+              {/* PAGINATION */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent:
+                    'space-between',
+                  alignItems: 'center',
+                  gap: '15px',
+                  paddingTop: '20px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div
                   style={{
-                    minWidth: 0,
-                    overflow: 'hidden',
+                    color:
+                      colors.secondary,
+                    fontSize: '13px',
                   }}
                 >
-                  <span
-                    style={{
-                      ...roleStyle(member.role),
-                      padding: '9px 12px',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: '600',
-                      display: 'inline-block',
-                      maxWidth: '100%',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    {member.role}
-                  </span>
+                  Showing{' '}
+                  {filteredMembers.length ===
+                  0
+                    ? 0
+                    : (currentPage - 1) *
+                        membersPerPage +
+                      1}{' '}
+                  to{' '}
+                  {Math.min(
+                    currentPage *
+                      membersPerPage,
+                    filteredMembers.length
+                  )}{' '}
+                  of{' '}
+                  {filteredMembers.length}{' '}
+                  members
                 </div>
 
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: '9px',
-                    color: subTextColor,
-                    fontSize: '14px',
-                    minWidth: 0,
-                    overflow: 'hidden',
+                    gap: '8px',
                   }}
                 >
-                  <span
-                    style={{
-                      width: '10px',
-                      height: '10px',
-                      minWidth: '10px',
-                      borderRadius: '50%',
-                      background: statusColor(member.status),
-                    }}
-                  />
-
-                  <span
-                    style={{
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {member.status}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    color: subTextColor,
-                    fontSize: '14px',
-                    minWidth: 0,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {member.joined}
-                </div>
-
-                <button
-                  onClick={() => alert(`Actions for ${member.name}`)}
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    minWidth: '42px',
-                    border: `1px solid ${borderColor}`,
-                    background: inputBg,
-                    color: textColor,
-                    borderRadius: '10px',
-                    fontSize: '20px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ⋮
-                </button>
-              </div>
-            ))
-          ) : (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '50px',
-                color: subTextColor,
-              }}
-            >
-              No team members found.
-            </div>
-          )}
-
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingTop: '20px',
-              gap: '15px',
-              flexWrap: 'wrap',
-              minWidth: 0,
-            }}
-          >
-            <div
-              style={{
-                color: subTextColor,
-                fontSize: '14px',
-              }}
-            >
-              Showing{' '}
-              {filteredMembers.length === 0
-                ? 0
-                : (currentPage - 1) * membersPerPage + 1}{' '}
-              to{' '}
-              {Math.min(
-                currentPage * membersPerPage,
-                filteredMembers.length
-              )}{' '}
-              of {filteredMembers.length} members
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '10px',
-              }}
-            >
-              <PageButton
-                onClick={() =>
-                  setCurrentPage((page) => Math.max(1, page - 1))
-                }
-                disabled={currentPage === 1}
-                cardBg={cardBg}
-                borderColor={borderColor}
-                textColor={textColor}
-              >
-                ‹
-              </PageButton>
-
-              {Array.from({ length: totalPages }).map((_, index) => {
-                const page = index + 1;
-
-                return (
                   <PageButton
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    active={currentPage === page}
-                    cardBg={cardBg}
-                    borderColor={borderColor}
-                    textColor={textColor}
+                    disabled={
+                      currentPage === 1
+                    }
+                    onClick={() =>
+                      setCurrentPage(
+                        (page) =>
+                          Math.max(
+                            1,
+                            page - 1
+                          )
+                      )
+                    }
+                    {...colors}
                   >
-                    {page}
+                    ‹
                   </PageButton>
-                );
-              })}
 
-              <PageButton
-                onClick={() =>
-                  setCurrentPage((page) => Math.min(totalPages, page + 1))
-                }
-                disabled={currentPage === totalPages}
-                cardBg={cardBg}
-                borderColor={borderColor}
-                textColor={textColor}
-              >
-                ›
-              </PageButton>
-            </div>
-          </div>
-        </div>
-      </div>
+                  {Array.from({
+                    length: totalPages,
+                  }).map((_, index) => {
+                    const page =
+                      index + 1;
 
+                    return (
+                      <PageButton
+                        key={page}
+                        active={
+                          currentPage ===
+                          page
+                        }
+                        onClick={() =>
+                          setCurrentPage(
+                            page
+                          )
+                        }
+                        {...colors}
+                      >
+                        {page}
+                      </PageButton>
+                    );
+                  })}
+
+                  <PageButton
+                    disabled={
+                      currentPage ===
+                      totalPages
+                    }
+                    onClick={() =>
+                      setCurrentPage(
+                        (page) =>
+                          Math.min(
+                            totalPages,
+                            page + 1
+                          )
+                      )
+                    }
+                    {...colors}
+                  >
+                    ›
+                  </PageButton>
+                </div>
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+
+      {/* =====================================================
+          INVITE MODAL
+      ====================================================== */}
       {showInviteModal && (
         <div
+          onClick={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              if (!inviteLoading) {
+                setShowInviteModal(false);
+              }
+            }
+          }}
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(15, 23, 42, 0.45)',
+            background:
+              'rgba(15,23,42,0.55)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -859,23 +1478,86 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
         >
           <div
             style={{
-              width: '420px',
+              width: '430px',
               maxWidth: '100%',
-              background: cardBg,
+              background: colors.card,
               borderRadius: '16px',
               padding: '28px',
-              border: `1px solid ${borderColor}`,
+              border:
+                `1px solid ${colors.border}`,
               boxSizing: 'border-box',
+              boxShadow:
+                '0 20px 50px rgba(0,0,0,0.2)',
             }}
           >
-            <h2 style={{ marginTop: 0 }}>Invite Team Member</h2>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent:
+                  'space-between',
+                alignItems: 'center',
+                marginBottom: '22px',
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: '21px',
+                  }}
+                >
+                  Invite Team Member
+                </h2>
 
-            <form onSubmit={handleInvite}>
+                <p
+                  style={{
+                    margin:
+                      '6px 0 0',
+                    color:
+                      colors.secondary,
+                    fontSize: '13px',
+                  }}
+                >
+                  Send an invitation
+                  to a new team member.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                disabled={
+                  inviteLoading
+                }
+                onClick={() =>
+                  setShowInviteModal(
+                    false
+                  )
+                }
+                style={{
+                  border: 'none',
+                  background:
+                    'transparent',
+                  color:
+                    colors.secondary,
+                  fontSize: '22px',
+                  cursor:
+                    inviteLoading
+                      ? 'not-allowed'
+                      : 'pointer',
+                }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form
+              onSubmit={handleInvite}
+            >
               <label
                 style={{
                   display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '14px',
+                  marginBottom: '7px',
+                  fontSize: '13px',
                   fontWeight: '600',
                 }}
               >
@@ -886,26 +1568,38 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
                 type="email"
                 required
                 value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
+                disabled={
+                  inviteLoading
+                }
+                onChange={(event) =>
+                  setInviteEmail(
+                    event.target.value
+                  )
+                }
                 placeholder="member@email.com"
+                autoFocus
                 style={{
                   width: '100%',
                   padding: '12px',
-                  boxSizing: 'border-box',
                   borderRadius: '9px',
-                  border: `1px solid ${borderColor}`,
-                  background: inputBg,
-                  color: textColor,
-                  marginBottom: '18px',
+                  border:
+                    `1px solid ${colors.border}`,
+                  background:
+                    colors.input,
+                  color: colors.text,
                   outline: 'none',
+                  marginBottom:
+                    '18px',
+                  boxSizing:
+                    'border-box',
                 }}
               />
 
               <label
                 style={{
                   display: 'block',
-                  marginBottom: '8px',
-                  fontSize: '14px',
+                  marginBottom: '7px',
+                  fontSize: '13px',
                   fontWeight: '600',
                 }}
               >
@@ -914,40 +1608,74 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
 
               <select
                 value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value)}
+                disabled={
+                  inviteLoading
+                }
+                onChange={(event) =>
+                  setInviteRole(
+                    event.target.value
+                  )
+                }
                 style={{
                   width: '100%',
                   padding: '12px',
-                  boxSizing: 'border-box',
                   borderRadius: '9px',
-                  border: `1px solid ${borderColor}`,
-                  background: inputBg,
-                  color: textColor,
-                  marginBottom: '24px',
+                  border:
+                    `1px solid ${colors.border}`,
+                  background:
+                    colors.input,
+                  color: colors.text,
+                  outline: 'none',
+                  marginBottom:
+                    '25px',
                 }}
               >
-                {roles.slice(1).map((role) => (
-                  <option key={role}>{role}</option>
-                ))}
+                {roles
+                  .slice(1)
+                  .map((role) => (
+                    <option
+                      key={role}
+                      value={role}
+                    >
+                      {role}
+                    </option>
+                  ))}
               </select>
 
               <div
                 style={{
                   display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: '12px',
+                  justifyContent:
+                    'flex-end',
+                  gap: '10px',
                 }}
               >
                 <button
                   type="button"
-                  onClick={() => setShowInviteModal(false)}
+                  disabled={
+                    inviteLoading
+                  }
+                  onClick={() => {
+                    setInviteEmail('');
+                    setShowInviteModal(
+                      false
+                    );
+                  }}
                   style={{
-                    padding: '11px 18px',
-                    borderRadius: '9px',
-                    border: `1px solid ${borderColor}`,
-                    background: 'transparent',
-                    color: textColor,
-                    cursor: 'pointer',
+                    padding:
+                      '11px 18px',
+                    borderRadius:
+                      '9px',
+                    border:
+                      `1px solid ${colors.border}`,
+                    background:
+                      'transparent',
+                    color: colors.text,
+                    cursor:
+                      inviteLoading
+                        ? 'not-allowed'
+                        : 'pointer',
+                    fontWeight: '600',
                   }}
                 >
                   Cancel
@@ -955,39 +1683,192 @@ export default function Team({ onNavigate, onLogout, theme = 'light' }) {
 
                 <button
                   type="submit"
+                  disabled={
+                    inviteLoading
+                  }
                   style={{
-                    padding: '11px 18px',
-                    borderRadius: '9px',
+                    padding:
+                      '11px 18px',
+                    borderRadius:
+                      '9px',
                     border: 'none',
-                    background: '#2563eb',
-                    color: 'white',
+                    background:
+                      '#2563eb',
+                    color: '#ffffff',
+                    cursor:
+                      inviteLoading
+                        ? 'not-allowed'
+                        : 'pointer',
                     fontWeight: '600',
-                    cursor: 'pointer',
+                    opacity:
+                      inviteLoading
+                        ? 0.7
+                        : 1,
                   }}
                 >
-                  Send Invitation
+                  {inviteLoading
+                    ? 'Sending...'
+                    : 'Send Invitation'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* =====================================================
+          ACTION MENU
+      ====================================================== */}
+      {showActionMenu &&
+        selectedMember && (
+          <div
+            onClick={closeActionMenu}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1500,
+            }}
+          >
+            <div
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform:
+                  'translate(-50%, -50%)',
+                width: '260px',
+                background:
+                  colors.card,
+                border:
+                  `1px solid ${colors.border}`,
+                borderRadius: '14px',
+                padding: '10px',
+                boxShadow:
+                  '0 15px 40px rgba(0,0,0,0.2)',
+              }}
+            >
+              <div
+                style={{
+                  padding: '12px',
+                  borderBottom:
+                    `1px solid ${colors.border}`,
+                  marginBottom: '5px',
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: '600',
+                    fontSize: '14px',
+                  }}
+                >
+                  {
+                    selectedMember.name
+                  }
+                </div>
+
+                <div
+                  style={{
+                    color:
+                      colors.secondary,
+                    fontSize: '12px',
+                    marginTop: '4px',
+                  }}
+                >
+                  {
+                    selectedMember.email
+                  }
+                </div>
+              </div>
+
+              <ActionButton
+                onClick={() => {
+                  setShowActionMenu(
+                    false
+                  );
+
+                  showNotification(
+                    `Viewing ${selectedMember.name}`
+                  );
+                }}
+                icon="👤"
+                text="View Member"
+                colors={colors}
+              />
+
+              <ActionButton
+                onClick={() =>
+                  handleChangeRole(
+                    selectedMember
+                  )
+                }
+                icon="✏️"
+                text="Change Role"
+                colors={colors}
+              />
+
+              <ActionButton
+                danger
+                onClick={() =>
+                  handleRemoveMember(
+                    selectedMember
+                  )
+                }
+                icon="🗑️"
+                text={
+                  actionLoading
+                    ? 'Processing...'
+                    : 'Remove Member'
+                }
+                colors={colors}
+              />
+            </div>
+          </div>
+        )}
     </div>
   );
 }
 
-function navStyle(color) {
-  return {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '10px 12px',
-    color,
-    borderRadius: '8px',
-    cursor: 'pointer',
-  };
+// =============================================================
+// AVATAR
+// =============================================================
+function Avatar({ name }) {
+  const safeName = name || 'User';
+
+  const initials = safeName
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
+  return (
+    <div
+      style={{
+        width: '48px',
+        height: '48px',
+        minWidth: '48px',
+        borderRadius: '50%',
+        background: '#dbeafe',
+        color: '#2563eb',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '700',
+        fontSize: '15px',
+      }}
+    >
+      {initials || 'U'}
+    </div>
+  );
 }
 
+// =============================================================
+// STAT CARD
+// =============================================================
 function StatCard({
   icon,
   iconBg,
@@ -995,39 +1876,38 @@ function StatCard({
   title,
   value,
   description,
-  cardBg,
-  textColor,
-  subTextColor,
-  borderColor,
+  card,
+  text,
+  secondary,
+  border,
 }) {
   return (
     <div
       style={{
-        background: cardBg,
-        border: `1px solid ${borderColor}`,
+        background: card,
+        border:
+          `1px solid ${border}`,
         borderRadius: '14px',
-        padding: '24px',
+        padding: '20px',
         display: 'flex',
         alignItems: 'center',
-        gap: '18px',
+        gap: '15px',
         minWidth: 0,
-        overflow: 'hidden',
         boxSizing: 'border-box',
-        boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
       }}
     >
       <div
         style={{
-          width: '58px',
-          height: '58px',
-          minWidth: '58px',
-          borderRadius: '18px',
+          width: '54px',
+          height: '54px',
+          minWidth: '54px',
+          borderRadius: '15px',
           background: iconBg,
           color: iconColor,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '26px',
+          fontSize: '23px',
         }}
       >
         {icon}
@@ -1036,17 +1916,13 @@ function StatCard({
       <div
         style={{
           minWidth: 0,
-          overflow: 'hidden',
         }}
       >
         <div
           style={{
-            fontSize: '14px',
-            color: subTextColor,
-            marginBottom: '7px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            color: secondary,
+            fontSize: '12px',
+            marginBottom: '5px',
           }}
         >
           {title}
@@ -1054,9 +1930,9 @@ function StatCard({
 
         <div
           style={{
-            fontSize: '26px',
+            color: text,
+            fontSize: '25px',
             fontWeight: '700',
-            color: textColor,
           }}
         >
           {value}
@@ -1064,12 +1940,9 @@ function StatCard({
 
         <div
           style={{
-            fontSize: '13px',
-            color: subTextColor,
-            marginTop: '5px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
+            color: secondary,
+            fontSize: '12px',
+            marginTop: '3px',
           }}
         >
           {description}
@@ -1079,34 +1952,81 @@ function StatCard({
   );
 }
 
+// =============================================================
+// PAGE BUTTON
+// =============================================================
 function PageButton({
   children,
   onClick,
   disabled,
   active,
-  cardBg,
-  borderColor,
-  textColor,
+  card,
+  border,
+  text,
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: '42px',
-        height: '42px',
-        minWidth: '42px',
-        borderRadius: '10px',
-        border: active ? '1px solid #2563eb' : `1px solid ${borderColor}`,
-        background: active ? '#2563eb' : cardBg,
-        color: active ? 'white' : textColor,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
+        width: '40px',
+        height: '40px',
+        borderRadius: '9px',
+        border: active
+          ? '1px solid #2563eb'
+          : `1px solid ${border}`,
+        background: active
+          ? '#2563eb'
+          : card,
+        color: active
+          ? '#ffffff'
+          : text,
+        cursor: disabled
+          ? 'not-allowed'
+          : 'pointer',
+        opacity: disabled ? 0.45 : 1,
         fontWeight: '600',
-        fontSize: '16px',
+        fontSize: '15px',
       }}
     >
       {children}
     </button>
   );
 }
+
+// =============================================================
+// ACTION BUTTON
+// =============================================================
+function ActionButton({
+  icon,
+  text,
+  onClick,
+  danger = false,
+  colors,
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '11px 12px',
+        border: 'none',
+        background: 'transparent',
+        color: danger
+          ? '#dc2626'
+          : colors.text,
+        borderRadius: '8px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontSize: '13px',
+      }}
+    >
+      <span>{icon}</span>
+      {text}
+    </button>
+  );
+}
+

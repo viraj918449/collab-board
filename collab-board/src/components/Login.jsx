@@ -2,17 +2,18 @@
 import React, { useState } from 'react';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
-  const [email, setEmail] = useState(''); // Changed to email to match backend API
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState(''); // Added to handle backend errors
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false); // Added loading state for better UX
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(''); // Clear any previous errors
+    setError('');
+    setLoading(true);
 
     try {
-      // Connect to the real Express endpoint
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: {
@@ -23,19 +24,24 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
 
       const data = await response.json();
 
-      // If the server returns a 401 or 400, throw the error
       if (!response.ok) {
-        throw new Error(data.error || 'Invalid login credentials.');
+        throw new Error(data.error || data.message || 'Invalid login credentials.');
       }
 
-      // Store the JWT token securely for future API calls
+      // Store token using the key matching your auth middleware/storage expectations
       localStorage.setItem('collabToken', data.token);
       
-      // Trigger the app to navigate to the dashboard
+      // Optional: Store user profile object if returned by backend
+      if (data.user) {
+        localStorage.setItem('collabUser', JSON.stringify(data.user));
+      }
+
       onLoginSuccess();
       
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to connect to the server.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,7 +71,6 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
             Log in to your CollabBoard Account
           </p>
 
-          {/* New Error Message Display */}
           {error && (
             <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#fee2e2', color: '#ef4444', borderRadius: '8px', fontSize: '13px', border: '1px solid #f87171' }}>
               {error}
@@ -97,7 +102,6 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
               />
             </div>
 
-            {/* Remember me & Forgot password row */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '13px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#334155' }}>
                 <input 
@@ -119,9 +123,10 @@ export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToFo
 
             <button 
               type="submit" 
-              style={{ width: '100%', padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+              disabled={loading}
+              style={{ width: '100%', padding: '12px', background: loading ? '#93c5fd' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              Log in →
+              {loading ? 'Logging in...' : 'Log in →'}
             </button>
           </form>
 

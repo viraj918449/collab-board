@@ -1,25 +1,30 @@
-require("dotenv").config();
+require('dotenv').config();
+
 const mongoose = require('mongoose');
 
-let dbInstance = null;
-
-async function connectDB() {
-  if (dbInstance) return dbInstance;
-
-  const uri = process.env.MONGO_URI;
-  if (!uri) {
-    throw new Error("MONGO_URI is undefined in environment variables");
-  }
-  
+const connectDB = async () => {
   try {
-    await mongoose.connect(uri);
-    dbInstance = mongoose.connection;
-    console.log("Connected to MongoDB 🚀");
-    return dbInstance;
+    // Check MongoDB URI
+    if (!process.env.MONGO_URI) {
+      throw new Error('MONGO_URI is not defined in .env file');
+    }
+
+    // Connect to MongoDB using Mongoose
+    const connection = await mongoose.connect(process.env.MONGO_URI);
+
+    console.log(
+      `MongoDB Connected: ${connection.connection.host}`
+    );
+
+    console.log(
+      `Database Name: ${connection.connection.name}`
+    );
+
+    return connection;
   } catch (error) {
-    console.error("MongoDB Connection Error:", error.message);
+    console.error('MongoDB Connection Error:', error.message);
     process.exit(1);
   }
-}
+};
 
 module.exports = connectDB;

@@ -1,5 +1,6 @@
 // src/components/Register.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
 
 export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
   const [fullName, setFullName] = useState('');
@@ -8,6 +9,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('');
   
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -20,26 +22,26 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
       return;
     }
 
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullName, role })
-      });
-      
-      const data = await response.json();
+    setLoading(true);
 
-      if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => {
-          onRegisterSuccess();
-        }, 2000);
-      } else {
-        setError(data.error || 'Registration failed');
-      }
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/register', {
+        email,
+        password,
+        name: fullName,
+        role
+      });
+
+      setSuccess(true);
+      setLoading(false);
+      setTimeout(() => {
+        if (onRegisterSuccess) onRegisterSuccess();
+      }, 2000);
     } catch (err) {
-      console.error('Network error:', err);
-      setError('Network error. Ensure your backend server is running on port 5000.');
+      console.error('Axios error:', err);
+      setLoading(false);
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Registration failed';
+      setError(errorMsg);
     }
   };
 
@@ -47,7 +49,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f8fafc', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', width: '100%', maxWidth: '850px', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
         
-        {/* Left Side Branding & Features (Light Theme) */}
+        {/* Left Side Branding & Features */}
         <div style={{ flex: 1, padding: '40px', background: '#f1f5f9', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ color: '#0f172a', margin: '0 0 20px 0' }}>📅 CollabBoard</h3>
@@ -63,7 +65,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           </div>
         </div>
 
-        {/* Right Side Form (Light Theme) */}
+        {/* Right Side Form */}
         <div style={{ flex: 1, padding: '40px' }}>
           <h2 style={{ color: '#0f172a', margin: '0 0 8px 0' }}>Create your account</h2>
           <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '24px' }}>
@@ -144,10 +146,10 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
 
             <button 
               type="submit" 
-              disabled={success}
-              style={{ width: '100%', padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: success ? 'not-allowed' : 'pointer', opacity: success ? 0.7 : 1, transition: 'background 0.2s' }}
+              disabled={loading || success}
+              style={{ width: '100%', padding: '12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (loading || success) ? 'not-allowed' : 'pointer', opacity: (loading || success) ? 0.7 : 1, transition: 'background 0.2s' }}
             >
-              Sign Up
+              {loading ? 'Signing Up...' : 'Sign Up'}
             </button>
           </form>
 

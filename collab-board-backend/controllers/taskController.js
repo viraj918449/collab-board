@@ -1,79 +1,62 @@
 const Task = require('../models/Task');
+const Board = require('../models/Board');
 
-// Get all tasks for a specific board
-exports.getTasks = async (req, res) => {
+const createTask = async (req, res) => {
   try {
-    const tasks = await Task.find({ boardId: req.params.boardId });
-    res.status(200).json(tasks);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const {
+      title,
+      tag,
+      status,
+      priority,
+      boardId,
+      assignedTo
+    } = req.body;
 
-// Create a new task
-exports.createTask = async (req, res) => {
-  try {
-    // 1. Verify user is attached (from the protect middleware)
-    const userId = req.user?.id || req.user?._id;
-    if (!userId) {
-      return res.status(401).json({ message: 'Unauthorized: User ID missing from token' });
+    // Check board
+    const board = await Board.findById(boardId);
+
+    if (!board) {
+      return res.status(404).json({
+        error: 'Board not found'
+      });
     }
 
-    // 2. Validate request
-    if (!req.body.title || !req.body.boardId) {
-      return res.status(400).json({ message: 'Please add a task title and boardId' });
-    }
-
-    // 3. Create the task in MongoDB
-    const task = await Task.create({
-      title: req.body.title,
-      description: req.body.description,
-      boardId: req.body.boardId,
-      status: req.body.status || 'To Do',       // Default to first Kanban column
-      priority: req.body.priority || 'Medium',  // Default priority
-      user: userId 
+    // Create task
+    const task = new Task({
+      title,
+      tag,
+      status,
+      priority,
+      boardId,
+      createdBy: req.user._id,
+      assignedTo: assignedTo || null
     });
 
-    res.status(201).json(task);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+    const savedTask = await task.save();
 
-// Update a task (Used for shifting columns: 'To Do' -> 'Doing')
-exports.updateTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    const updatedTask = await Task.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
+    // Return creator information
+    await savedTask.populate(
+      'createdBy',
+      'username email'
     );
 
-    res.status(200).json(updatedTask);
+    // Return assigned user information if assigned
+    await savedTask.populate(
+      'assignedTo',
+      'username email'
+    );
+
+    res.status(201).json(savedTask);
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Create task error:', error);
+
+    res.status(400).json({
+      error: error.message
+    });
   }
 };
 
-// Delete a task
-exports.deleteTask = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id);
-
-    if (!task) {
-      return res.status(404).json({ message: 'Task not found' });
-    }
-
-    await task.deleteOne();
-
-    res.status(200).json({ id: req.params.id, message: 'Task removed' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+module.exports = {
+  createTask
 };
