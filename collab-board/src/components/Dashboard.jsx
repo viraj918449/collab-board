@@ -43,6 +43,13 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
       return '';
     }
   });
+  const [userAvatar, setUserAvatar] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('collabUser') || 'null')?.avatar || '';
+    } catch {
+      return '';
+    }
+  });
   const [taskOverview, setTaskOverview] = useState({
     completed: 0,
     inProgress: 0,
@@ -78,6 +85,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
       .then(({ data }) => {
         if (!isActive) return;
         setUserName(data.name || '');
+        setUserAvatar(data.avatar || '');
         localStorage.setItem('collabUser', JSON.stringify(data));
       })
       .catch(() => {
@@ -278,9 +286,15 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
               🔔
             </div>
 
-            <div onClick={() => onNavigate('profile')} style={{ width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', background: '#cbd5e1', cursor: 'pointer' }}>
-              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100" alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
+            <button
+              type="button"
+              onClick={() => onNavigate('profile')}
+              aria-label="Update profile"
+              title="Update Profile"
+              style={{ width: '36px', height: '36px', padding: 0, border: `1px solid ${borderColor}`, borderRadius: '50%', overflow: 'hidden', background: '#cbd5e1', cursor: 'pointer' }}
+            >
+              <img src={userAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'} alt="Update profile" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            </button>
           </div>
         </div>
 

@@ -167,7 +167,7 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
       <div style={{ flex: 1, padding: '40px 60px', boxSizing: 'border-box', overflowY: 'auto' }}>
         
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: 'bold', color: textColor }}>Profile</h1>
+          <h1 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: 'bold', color: textColor }}>Update Profile</h1>
           <p style={{ margin: 0, fontSize: '13px', color: subTextColor }}>Manage your personal information and preferences.</p>
         </div>
         {message && <p style={{ color: message.includes('successfully') ? '#16a34a' : '#dc2626', fontSize: '13px' }}>{message}</p>}
