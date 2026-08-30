@@ -1,0 +1,144 @@
+import axios from 'axios';
+
+// ==========================================
+// AXIOS API INSTANCE
+// ==========================================
+
+const API = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// ==========================================
+// JWT TOKEN INTERCEPTOR
+// ==========================================
+
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// ==========================================
+// RESPONSE ERROR HANDLING
+// ==========================================
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// ==========================================
+// AUTH
+// ==========================================
+
+export const registerUser = async (userData) => {
+  return API.post('/auth/register', userData);
+};
+
+export const loginUser = async (userData) => {
+  return API.post('/auth/login', userData);
+};
+
+export const getCurrentUser = async () => {
+  return API.get('/auth/me');
+};
+
+// ==========================================
+// BOARDS
+// ==========================================
+
+// Get all boards
+export const fetchBoards = async () => {
+  return API.get('/boards');
+};
+
+// Get one board
+export const fetchBoard = async (id) => {
+  return API.get(`/boards/${id}`);
+};
+
+// Create board
+export const createBoard = async (boardData) => {
+  return API.post('/boards', boardData);
+};
+
+// Update board
+export const updateBoard = async (id, boardData) => {
+  return API.put(`/boards/${id}`, boardData);
+};
+
+// Delete board
+export const deleteBoard = async (id) => {
+  return API.delete(`/boards/${id}`);
+};
+
+// ==========================================
+// TEAM / MEMBERS
+// ==========================================
+
+// Get board members
+export const fetchTeamMembers = async (boardId) => {
+  return API.get(`/boards/${boardId}/members`);
+};
+
+// Invite team member
+export const inviteTeamMember = async (boardId, invitationData) => {
+  return API.post(
+    `/boards/${boardId}/invitations`,
+    invitationData
+  );
+};
+
+// ==========================================
+// TASKS
+// ==========================================
+
+// Get all tasks for a board
+export const fetchTasks = async (boardId) => {
+  return API.get(`/tasks/${boardId}`);
+};
+
+// Get one task
+export const fetchTask = async (id) => {
+  return API.get(`/tasks/${id}`);
+};
+
+// Create task
+export const createTask = async (taskData) => {
+  return API.post('/tasks', taskData);
+};
+
+// Update task
+export const updateTask = async (id, taskData) => {
+  return API.put(`/tasks/${id}`, taskData);
+};
+
+// Delete task
+export const deleteTask = async (id) => {
+  return API.delete(`/tasks/${id}`);
+};
+
+// ==========================================
+// DEFAULT EXPORT
+// ==========================================
+
+export default API;
+
