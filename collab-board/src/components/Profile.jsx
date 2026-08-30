@@ -63,6 +63,11 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
       localStorage.setItem('collabUser', JSON.stringify(data));
       setMessage('Profile updated successfully.');
     } catch (err) {
+      if (err.response?.status === 401) {
+        setMessage('Your session has expired. Please sign in again.');
+        onLogout();
+        return;
+      }
       setMessage(err.response?.data?.message || err.response?.data?.error || 'Unable to update your profile.');
     } finally { setSaving(false); }
   };

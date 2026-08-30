@@ -19,11 +19,20 @@ const Board = require('./models/Board');
 
 const app = express();
 const server = http.createServer(app);
+const configuredOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const isAllowedOrigin = (origin, callback) => {
+  // During local development, allow devices on the same network as well as localhost.
+  if (!origin || process.env.NODE_ENV !== 'production' || configuredOrigins.includes(origin)) {
+    return callback(null, true);
+  }
+  return callback(new Error('Origin is not allowed by CORS'));
+};
+const corsOptions = { origin: isAllowedOrigin, credentials: true };
 const io = new Server(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true,
-  },
+  cors: corsOptions,
 });
 
 configureRealtime(io);
@@ -55,12 +64,7 @@ io.on('connection', (socket) => {
 // ==================== MIDDLEWARE ====================
 
 // CORS
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 // Parse JSON requests
 // Profile avatars are stored as data URLs, which can exceed Express's 100 KB default.
