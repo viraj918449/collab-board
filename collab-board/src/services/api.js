@@ -62,6 +62,10 @@ export const getCurrentUser = async () => {
   return API.get('/auth/me');
 };
 
+export const updateCurrentUser = async (profile) => {
+  return API.put('/auth/me', profile);
+};
+
 // ==========================================
 // BOARDS
 // ==========================================

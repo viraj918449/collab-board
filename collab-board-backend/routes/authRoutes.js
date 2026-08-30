@@ -23,4 +23,35 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// --- UPDATE CURRENT USER PROFILE ---
+router.put('/me', protect, async (req, res) => {
+  try {
+    const { name, email, bio, location, website, avatar } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) return res.status(400).json({ message: 'Name is required' });
+      user.name = name.trim();
+    }
+    if (email !== undefined) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) return res.status(400).json({ message: 'A valid email is required' });
+      const duplicate = await User.findOne({ email: normalizedEmail, _id: { $ne: user._id } });
+      if (duplicate) return res.status(409).json({ message: 'That email is already in use' });
+      user.email = normalizedEmail;
+    }
+    for (const field of ['bio', 'location', 'website', 'avatar']) {
+      if (req.body[field] !== undefined) {
+        if (typeof req.body[field] !== 'string') return res.status(400).json({ message: `${field} must be text` });
+        user[field] = req.body[field].trim();
+      }
+    }
+    await user.save();
+    res.json(await User.findById(user._id).select('-password'));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
