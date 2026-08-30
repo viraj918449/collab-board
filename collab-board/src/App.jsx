@@ -43,10 +43,38 @@ export default function App() {
       { id: 3, title: 'Email Notifications', priority: 'Medium', status: 'Pending' },
     ];
   });
+  const [localNotifications, setLocalNotifications] = useState(() => {
+    try {
+      const savedNotifications = JSON.parse(localStorage.getItem('localNotifications') || '[]');
+      return Array.isArray(savedNotifications) ? savedNotifications : [];
+    } catch {
+      localStorage.removeItem('localNotifications');
+      return [];
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem('dashboardTasks', JSON.stringify(dashboardTasks));
   }, [dashboardTasks]);
+
+  useEffect(() => {
+    localStorage.setItem('localNotifications', JSON.stringify(localNotifications));
+  }, [localNotifications]);
+
+  const handleTaskCreated = (task) => {
+    setDashboardTasks((currentTasks) => [task, ...currentTasks]);
+    setLocalNotifications((currentNotifications) => [
+      {
+        _id: `local-${Date.now()}`,
+        type: 'task_created',
+        actor: { name: 'You' },
+        message: `You created a new task: ${task.title}`,
+        read: false,
+        createdAt: new Date().toISOString(),
+      },
+      ...currentNotifications,
+    ]);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -147,6 +175,8 @@ export default function App() {
             theme={theme}
             onLogout={handleLogout}
             onNavigate={handleNavigate}
+            localNotifications={localNotifications}
+            onLocalNotificationsChange={setLocalNotifications}
           />
         );
       case 'newtask':
@@ -155,7 +185,7 @@ export default function App() {
             theme={theme}
             onLogout={handleLogout}
             onNavigate={handleNavigate}
-            onCreateTask={(task) => setDashboardTasks((currentTasks) => [task, ...currentTasks])}
+            onCreateTask={handleTaskCreated}
           />
         );
       case 'schedule':
