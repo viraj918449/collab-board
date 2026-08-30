@@ -38,6 +38,7 @@ exports.register = async (req, res) => {
       name: name.trim(),
       email: normalizedEmail,
       password,
+      status: 'Online',
       ...(role?.trim() ? { role: role.trim() } : {})
     });
 
@@ -96,6 +97,13 @@ exports.login = async (req, res) => {
       return res.status(401).json({
         error: 'Invalid credentials'
       });
+    }
+
+    // A successful sign-in means this member should be visible in Team's
+    // "Online Now" total immediately.
+    if (user.status !== 'Online') {
+      user.status = 'Online';
+      await user.save();
     }
 
     // Generate token

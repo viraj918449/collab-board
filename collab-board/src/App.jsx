@@ -18,10 +18,12 @@ import Board from './components/Board';
 import ProjectOverview from './components/ProjectOverview';
 import NewTask from './components/NewTask';
 import Sidebar from './components/Sidebar';
+import socket from './services/socket';
 import './App.css';
 
 export default function App() {
   const [currentView, setCurrentView] = useState(() => localStorage.getItem('token') ? 'dashboard' : 'login');
+  const hasToken = Boolean(localStorage.getItem('token'));
   const formatDate = (date = new Date()) => date.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -62,6 +64,16 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('localNotifications', JSON.stringify(localNotifications));
   }, [localNotifications]);
+
+  useEffect(() => {
+    if (!hasToken) {
+      socket.disconnect();
+      return undefined;
+    }
+
+    socket.connect();
+    return () => socket.disconnect();
+  }, [hasToken]);
 
   const createTaskNotification = (task) => {
     setLocalNotifications((currentNotifications) => [

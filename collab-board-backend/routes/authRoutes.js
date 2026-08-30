@@ -17,6 +17,13 @@ router.get('/me', protect, async (req, res) => {
       return res.status(401).json({ message: 'Your session is no longer valid. Please sign in again.' });
     }
 
+    // Existing token sessions should also appear online without requiring
+    // the member to sign out and sign in again.
+    if (user.status !== 'Online') {
+      user.status = 'Online';
+      await user.save();
+    }
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });

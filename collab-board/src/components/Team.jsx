@@ -1,5 +1,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
+import socket from '../services/socket';
 
 const API_BASE_URL = 'http://localhost:5000/api/team';
 
@@ -27,6 +28,7 @@ export default function Team({
   // STATE
   // =========================================================
   const [members, setMembers] = useState([]);
+  const [onlineMemberIds, setOnlineMemberIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -154,6 +156,16 @@ export default function Team({
     fetchTeamMembers();
   }, []);
 
+  useEffect(() => {
+    const syncPresence = (userIds = []) => {
+      setOnlineMemberIds(userIds.map((id) => String(id)));
+    };
+
+    socket.on('presence:sync', syncPresence);
+    socket.emit('presence:request');
+    return () => socket.off('presence:sync', syncPresence);
+  }, []);
+
   // =========================================================
   // FILTER MEMBERS
   // =========================================================
@@ -202,9 +214,9 @@ export default function Team({
   // =========================================================
   // STATISTICS
   // =========================================================
-  const onlineCount = members.filter(
-    (member) => member.status === 'Online'
-  ).length;
+  const isMemberOnline = (member) => onlineMemberIds.includes(String(member.id));
+  const memberStatus = (member) => isMemberOnline(member) ? 'Online' : member.status === 'Away' ? 'Away' : 'Offline';
+  const onlineCount = members.filter(isMemberOnline).length;
 
   const pendingInvitations = members.filter(
     (member) =>
@@ -1223,13 +1235,13 @@ export default function Team({
                                   '50%',
                                 background:
                                   statusColor(
-                                    member.status
+                                    memberStatus(member)
                                   ),
                               }}
                             />
 
                             {
-                              member.status
+                              memberStatus(member)
                             }
                           </div>
 

@@ -19,6 +19,7 @@ const Board = require('./models/Board');
 
 const app = express();
 const server = http.createServer(app);
+const connectedUsers = new Map();
 const configuredOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map((origin) => origin.trim())
@@ -37,6 +38,9 @@ const io = new Server(server, {
 
 configureRealtime(io);
 
+const onlineUserIds = () => [...connectedUsers.keys()];
+const broadcastPresence = () => io.emit('presence:sync', onlineUserIds());
+
 io.use((socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
@@ -50,6 +54,16 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+  const userId = socket.data.userId?.toString();
+  if (userId) {
+    connectedUsers.set(userId, (connectedUsers.get(userId) || 0) + 1);
+    broadcastPresence();
+  }
+
+  socket.on('presence:request', () => {
+    socket.emit('presence:sync', onlineUserIds());
+  });
+
   socket.on('board:join', async (boardId) => {
     const board = await Board.findById(boardId).select('members');
     const isMember = board?.members.some((member) => member.toString() === socket.data.userId?.toString());
@@ -58,6 +72,14 @@ io.on('connection', (socket) => {
 
   socket.on('board:leave', (boardId) => {
     if (typeof boardId === 'string') socket.leave(`board:${boardId}`);
+  });
+
+  socket.on('disconnect', () => {
+    if (!userId) return;
+    const remainingConnections = (connectedUsers.get(userId) || 1) - 1;
+    if (remainingConnections > 0) connectedUsers.set(userId, remainingConnections);
+    else connectedUsers.delete(userId);
+    broadcastPresence();
   });
 });
 
