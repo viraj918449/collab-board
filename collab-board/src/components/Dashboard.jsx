@@ -1,6 +1,11 @@
 // src/components/Dashboard.jsx
+<<<<<<< HEAD
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchBoards, fetchTasks, getCurrentUser } from '../services/api';
+=======
+import React, { useEffect, useState } from 'react';
+import { fetchBoards, fetchTasks, getCurrentUser, fetchRecentActivities } from '../services/api';
+>>>>>>> 685a969 (Connect recent activity to backend)
 
 const isSameDay = (firstDate, secondDate) => (
   firstDate.getFullYear() === secondDate.getFullYear()
@@ -25,10 +30,7 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
   const inputBg = isDark ? '#0f172a' : '#fff';
 
   // Local state for interactive features
-  const [activities, setActivities] = useState([
-    { id: 1, text: "🚀 Nimali moved 'Design Login Page' to In Progress", time: '2m ago' },
-    { id: 2, text: "⚡ Hasidu completed 'API Integration'", time: '10m ago' },
-  ]);
+  const [activities, setActivities] = useState([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -57,6 +59,24 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
     error: false,
   });
 
+  // Load recent activities from the backend.
+  useEffect(() => {
+    let isActive = true;
+
+    fetchRecentActivities(5)
+.then(({ data }) => {
+      if (!isActive) return;
+      const activityData = Array.isArray(data) ? data : data.activities || [];
+      setActivities(activityData);
+    })
+.catch((error) => {
+      console.error("Failed to load recent activities:", error);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
   // Keep the dashboard calendar accurate if it remains open after midnight.
   useEffect(() => {
     let timerId;
@@ -155,10 +175,6 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
     };
 
     onTasksChange?.((currentTasks) => [newTask, ...currentTasks]);
-    setActivities([
-      { id: Date.now(), text: `✨ You added a new task '${newTaskTitle}'`, time: 'Just now' },
-      ...activities
-    ]);
 
     setNewTaskTitle('');
     setIsModalOpen(false);
@@ -542,3 +558,6 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
     </div>
   );
 }
+
+
+
