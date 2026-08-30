@@ -37,9 +37,11 @@ API.interceptors.request.use(
 API.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isInvalidProfileSession = error.response?.status === 404 && error.config?.url === '/auth/me';
+    if (error.response?.status === 401 || isInvalidProfileSession) {
       localStorage.removeItem('token');
       localStorage.removeItem('collabToken');
+      localStorage.removeItem('collabUser');
     }
 
     return Promise.reject(error);

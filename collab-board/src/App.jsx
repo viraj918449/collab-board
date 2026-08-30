@@ -22,6 +22,13 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState('20 August 2026');
   const [theme, setTheme] = useState('light'); // <-- Added theme state for Light/Dark mode
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('collabToken');
+    localStorage.removeItem('collabUser');
+    setCurrentView('login');
+  };
+
   // Updated navigation handler to accept an optional second argument for the date payload
   const handleNavigate = (view, date = null) => {
     if (date) {
@@ -72,7 +79,7 @@ export default function App() {
         return (
           <Profile 
             theme={theme} 
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );  
@@ -80,7 +87,7 @@ export default function App() {
         return (                      
           <Team
             theme={theme}
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate} 
           />
         );
@@ -88,7 +95,7 @@ export default function App() {
         return (
           <Dashboard 
             theme={theme} 
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -102,7 +109,7 @@ export default function App() {
         return (
           <Tasks 
             theme={theme}
-            onLogout={() => setCurrentView('login')} 
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -110,7 +117,7 @@ export default function App() {
         return (
           <Notifications 
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -120,7 +127,7 @@ export default function App() {
         return (
           <Schedule 
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
             selectedDate={selectedDate}
           />
@@ -129,7 +136,7 @@ export default function App() {
         return (
           <CalendarPage
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -138,7 +145,7 @@ export default function App() {
           <Setting
             theme={theme}       
             setTheme={setTheme} 
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -147,7 +154,7 @@ export default function App() {
           <Upcomingtask
             theme={theme}       
             setTheme={setTheme} 
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
         );
@@ -155,7 +162,7 @@ export default function App() {
         return (
           <ActivityHistory
             theme={theme}
-            onLogout={() => setCurrentView('login')}
+            onLogout={handleLogout}
             onNavigate={handleNavigate}
           />
       );

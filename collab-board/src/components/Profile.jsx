@@ -26,10 +26,33 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const fallbackAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200';
 
   useEffect(() => {
-    getCurrentUser().then(({ data }) => {
+    const applyProfile = (data) => {
       setFullName(data.name || ''); setEmail(data.email || ''); setBio(data.bio || '');
       setLocation(data.location || ''); setWebsite(data.website || ''); setProfileImage(data.avatar || '');
-    }).catch((err) => setMessage(err.response?.data?.message || err.response?.data?.error || 'Unable to load your profile.')).finally(() => setLoading(false));
+    };
+
+    try {
+      const cachedUser = JSON.parse(localStorage.getItem('collabUser') || 'null');
+      if (cachedUser) applyProfile(cachedUser);
+    } catch {
+      localStorage.removeItem('collabUser');
+    }
+
+    getCurrentUser()
+      .then(({ data }) => {
+        applyProfile(data);
+        localStorage.setItem('collabUser', JSON.stringify(data));
+      })
+      .catch((err) => {
+        if (err.response?.status === 401 || err.response?.status === 404) {
+          // The login response is already displayed from local storage above.
+          // Do not replace it with an error or navigate away if refresh fails.
+          return;
+        }
+        // Keep the saved profile visible during a temporary network failure.
+        console.error('Unable to refresh profile:', err);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const handleSave = async (e) => {
@@ -49,6 +72,14 @@ export default function Profile({ onNavigate, onLogout, theme = 'light' }) {
   const file = e.target.files[0];
 
   if (file) {
+    if (!file.type.startsWith('image/')) {
+      setMessage('Please select an image file.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage('Please select an image smaller than 2 MB.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setProfileImage(reader.result);
     reader.readAsDataURL(file);

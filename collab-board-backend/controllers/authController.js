@@ -14,7 +14,8 @@ const generateToken = (userId) => {
 // Register
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
     // Check required fields
     if (!name || !email || !password) {
@@ -24,7 +25,7 @@ exports.register = async (req, res) => {
     }
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({
@@ -34,9 +35,10 @@ exports.register = async (req, res) => {
 
     // Create user
     const user = new User({
-      name,
-      email,
-      password
+      name: name.trim(),
+      email: normalizedEmail,
+      password,
+      ...(role?.trim() ? { role: role.trim() } : {})
     });
 
     await user.save();
@@ -66,6 +68,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
     // Check required fields
     if (!email || !password) {
@@ -75,7 +78,7 @@ exports.login = async (req, res) => {
     }
 
     // Find user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(401).json({
