@@ -19,7 +19,7 @@ CollabBoard is a decoupled, full-stack project management application designed t
 6. [Environment Variables](#-environment-variables)
 7. [API Reference](#-api-reference)
 8. [Known Limitations & Future Scope](#️-known-limitations--future-scope)
-9. [How To Run](#️-known-limitations--future-scope)
+9. [How to Run Collaboard](#️-how-to-run-collaboard)
 ---
 
 ## ✨ Features
@@ -52,8 +52,9 @@ CollabBoard utilizes a decoupled Client-Server architecture. The React frontend 
 |                   |                         |  (Users & Tasks)      |
 +-------------------+                         +-----------------------+
 
+9.[How to Run CollabBoard](#-how-to-run-collabboard)
 
-# How to Run CollabBoard
+Architecture Diagram
 
 CollabBoard is a decoupled full-stack app: a **Node.js/Express backend** (MongoDB + Socket.io) and a **React (Vite) frontend**. You run them as two separate processes.
 
