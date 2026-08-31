@@ -1,11 +1,40 @@
 // src/components/Dashboard.jsx
-<<<<<<< HEAD
 import React, { useEffect, useMemo, useState } from 'react';
-import { fetchBoards, fetchTasks, getCurrentUser } from '../services/api';
-=======
-import React, { useEffect, useState } from 'react';
 import { fetchBoards, fetchTasks, getCurrentUser, fetchRecentActivities } from '../services/api';
->>>>>>> 685a969 (Connect recent activity to backend)
+
+const formatRelativeTime = (dateValue) => {
+  if (!dateValue) return 'just now';
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return 'just now';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+
+  return date.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+};
+
+const formatActivityMessage = (activity) => {
+  if (!activity) return 'updated the board';
+
+  const message = activity.message || activity.type || 'updated the board';
+  return message
+    .replace(/“/g, '"')
+    .replace(/”/g, '"')
+    .replace(/’/g, "'")
+    .replace(/–/g, '-');
+};
 
 const isSameDay = (firstDate, secondDate) => (
   firstDate.getFullYear() === secondDate.getFullYear()
@@ -433,11 +462,19 @@ export default function Dashboard({ onLogout, onNavigate, theme = 'light', tasks
                 <button onClick={() => onNavigate('activity-history')} style={{ fontSize: '12px', color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none', padding: 0, fontWeight: '500' }}>View all</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px', color: subTextColor }}>
-                {activities.map(act => (
-                  <div key={act.id}>
-                    {act.text} <i style={{ color: subTextColor, fontSize: '11px' }}>{act.time}</i>
-                  </div>
-                ))}
+                {activities.length === 0 ? (
+                  <div style={{ color: subTextColor }}>No recent activity yet.</div>
+                ) : (
+                  activities.slice(0, 5).map((act, index) => (
+                    <div key={act._id || `${act.type}-${act.createdAt || index}`}>
+                      <strong style={{ color: textColor }}>{act.actor?.name || 'Someone'}</strong>{' '}
+                      {formatActivityMessage(act)}
+                      <i style={{ color: subTextColor, fontSize: '11px', display: 'block', marginTop: '2px' }}>
+                        {formatRelativeTime(act.createdAt)}
+                      </i>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
