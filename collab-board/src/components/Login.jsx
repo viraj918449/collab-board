@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { loginUser } from '../services/api';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess, onSwitchToForgot }) {
-  const [email, setEmail] = useState('admin@collabboard.com');
-  const [password, setPassword] = useState('admin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false); // Added loading state for better UX
